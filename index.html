@@ -18,7 +18,7 @@
         <div class="login-content">
             <h1 class="login-title">Log in to be able to use CatsBlock</h1>
             <button id="btn-google-login" class="btn btn-primary">
-                <span class="icon"></span> Log in with Google
+                <span class="icon">G</span> Log in with Google
             </button>
             <div class="login-footer">
                 By continuing, you agree to our <a href="#" id="link-tos-login">terms of service.</a>
@@ -43,8 +43,7 @@
             </div>
         </header>
 
-        <div id="chat-list" class="scroll-area">
-            </div>
+        <div id="chat-list" class="scroll-area"></div>
 
         <div class="fab" id="btn-new-chat">
             <span>&#9999;</span>
@@ -59,17 +58,14 @@
             </div>
             <div class="modal-body">
                 <p class="modal-desc">To chat with someone, please display your account information.</p>
-                
                 <div class="input-group">
                     <label>Display name (only shown to you. Max 30 digits.)</label>
                     <input type="text" id="new-chat-name" maxlength="30" minlength="1">
                 </div>
-                
                 <div class="input-group">
                     <label>Account ID</label>
                     <input type="number" id="new-chat-id" placeholder="Ex: 1">
                 </div>
-
                 <button class="btn btn-primary full-width" id="btn-start-chat">Start Chat</button>
             </div>
         </div>
@@ -80,15 +76,38 @@
             <div class="chat-back" id="btn-close-chat">&#8592;</div>
             <div class="chat-user-info" id="chat-header-clickable">
                 <img src="" alt="" id="chat-header-img">
-                <span id="chat-header-name">User</span>
+                <div style="display: flex; flex-direction: column;">
+                    <span id="chat-header-name">User</span>
+                    <small id="peer-last-seen" class="last-seen-status"></small>
+                </div>
             </div>
             <div class="icon-btn" id="btn-call">&#128222;</div>
         </div>
-        <div class="messages-container" id="messages-list">
+        
+        <div class="messages-container" id="messages-list"></div>
+
+        <div id="media-preview-container" class="hidden">
+            <div id="media-preview-content"></div>
+            <div id="audio-recording-ui" class="hidden">
+                <div class="wave-container">
+                    <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+                </div>
             </div>
+            <button id="btn-cancel-media" class="icon-btn">&times;</button>
+        </div>
+
         <div class="chat-input-area">
+            <div class="input-media-btns">
+                <button id="btn-img-picker" class="icon-btn">&#128443;</button>
+                <button id="btn-vid-picker" class="icon-btn">&#128249;</button>
+            </div>
             <input type="text" id="msg-input" placeholder="Message..." autocomplete="off">
-            <button class="btn-text" id="btn-send-msg">Send</button>
+            <div class="input-right-btns">
+                <button id="btn-aud-picker" class="icon-btn">&#127897;</button>
+                <button class="btn-text" id="btn-send-msg">Send</button>
+                <button id="btn-confirm-audio" class="icon-btn hidden">&#10148;</button>
+                <button id="btn-trash-audio" class="icon-btn hidden">&#128465;</button>
+            </div>
         </div>
     </div>
 
@@ -106,7 +125,6 @@
                     <option value="on">Enabled</option>
                 </select>
             </div>
-
             <h3>Privacy</h3>
             <div class="input-group">
                 <label>Accept new conversations</label>
@@ -136,8 +154,8 @@
                 <img src="" class="profile-lg-img" id="profile-modal-img">
                 <h2 id="profile-modal-name"></h2>
                 <div class="profile-stat" id="profile-modal-id"></div>
-                <div class="profile-desc" id="profile-modal-desc"></div>
-                
+                <textarea id="profile-desc-edit" class="input-group" placeholder="Edit description..." maxlength="200"></textarea>
+                <button id="btn-update-desc" class="btn btn-primary full-width">Save Description</button>
                 <div class="profile-actions">
                     <button class="btn btn-red-outline" id="btn-block-user">Block this account</button>
                     <button class="btn btn-red-outline" id="btn-report-user">Report this profile</button>
@@ -147,36 +165,13 @@
     </div>
 
     <div id="block-confirm-modal" class="modal-overlay hidden">
-        <div class="modal">
-            <div class="modal-body">
-                <p id="block-confirm-text">Are you sure you want to block this profile?</p>
-                <div class="modal-buttons">
-                    <button class="btn" data-close="block-confirm-modal">Never mind</button>
-                    <button class="btn btn-red" id="btn-confirm-block">Block</button>
-                </div>
-            </div>
-        </div>
+        <div class="modal"><div class="modal-body"><p id="block-confirm-text">Block profile?</p><div class="modal-buttons"><button class="btn" data-close="block-confirm-modal">No</button><button class="btn btn-red" id="btn-confirm-block">Block</button></div></div></div>
     </div>
-
     <div id="report-modal" class="modal-overlay hidden">
-        <div class="modal">
-            <div class="modal-header">Report <span class="modal-close" data-close="report-modal">&times;</span></div>
-            <div class="modal-body">
-                <p>To report this profile, show the conversations as proof and send them to the owner, named fmafioso on TikTok.</p>
-            </div>
-        </div>
+        <div class="modal"><div class="modal-header">Report<span class="modal-close" data-close="report-modal">&times;</span></div><div class="modal-body"><p>Send proof to owner fmafioso on TikTok.</p></div></div>
     </div>
-
     <div id="call-confirm-modal" class="modal-overlay hidden">
-        <div class="modal">
-            <div class="modal-body">
-                <p>Are you sure you want to call the person?</p>
-                <div class="modal-buttons">
-                    <button class="btn btn-primary" id="btn-confirm-call">Call</button>
-                    <button class="btn" data-close="call-confirm-modal">Never mind</button>
-                </div>
-            </div>
-        </div>
+        <div class="modal"><div class="modal-body"><p>Call this person?</p><div class="modal-buttons"><button class="btn btn-primary" id="btn-confirm-call">Call</button><button class="btn" data-close="call-confirm-modal">No</button></div></div></div>
     </div>
 
     <div id="calling-frame" class="frame hidden calling-ui">
@@ -185,29 +180,21 @@
             <img src="" class="calling-avatar" id="calling-avatar-img">
             <h3 id="calling-name">User</h3>
         </div>
-        <div class="call-controls">
-            <button class="btn-circle btn-hangup" id="btn-hangup">&#128222;</button>
-        </div>
+        <div class="call-controls"><button class="btn-circle btn-hangup" id="btn-hangup">&#128222;</button></div>
     </div>
 
     <div id="incoming-call-overlay" class="hidden">
-        <div class="incoming-info">
-            <img src="" class="calling-avatar small" id="incoming-avatar">
-            <h2 id="incoming-name">Incoming Call...</h2>
-        </div>
+        <div class="incoming-info"><img src="" class="calling-avatar small" id="incoming-avatar"><h2 id="incoming-name">Incoming Call...</h2></div>
         <div class="slide-area">
-            <div class="slide-col">
-                <div class="btn-circle btn-decline" id="btn-decline-call">&#128222;</div>
-                <span class="slide-hint">Hold to decline</span>
-            </div>
-            <div class="slide-col">
-                <div class="btn-circle btn-answer" id="btn-answer-call">&#128222;</div>
-                <span class="slide-hint">Hold to answer</span>
-            </div>
+            <div class="slide-col"><div class="btn-circle btn-decline" id="btn-decline-call">&#128222;</div><span class="slide-hint">Hold to decline</span></div>
+            <div class="slide-col"><div class="btn-circle btn-answer" id="btn-answer-call">&#128222;</div><span class="slide-hint">Hold to answer</span></div>
         </div>
     </div>
 
+    <input type="file" id="input-img-hidden" accept="image/*" class="hidden">
+    <input type="file" id="input-vid-hidden" accept="video/mp4" class="hidden">
+
     <script type="module" src="app.js"></script>
 </body>
-      </html>
-
+                                                                                                                                                                             </html>
+                                                                                                                                                                             
