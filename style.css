@@ -98,4 +98,4 @@ header { display: flex; justify-content: space-between; align-items: center; pad
 .calling-avatar { width: 120px; height: 120px; border-radius: 50%; border: 3px solid white; margin-bottom: 20px; }
 .btn-circle { width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer; border: none; }
 .btn-hangup { background: var(--error-color); color: white; }
-        
+                
