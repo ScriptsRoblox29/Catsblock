@@ -1,95 +1,228 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>CatsBlock</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
     <div id="toast-container"></div>
 
     <div id="loading-screen" class="frame">
-        <div class="loader-content">
-            <div class="spinner-insta"></div>
-            <h1 class="logo-text">CatsBlock</h1>
-        </div>
+        <div class="spinner"></div>
     </div>
 
     <div id="login-frame" class="frame hidden">
-        <div class="glass-card login-box">
-            <h1 class="logo-text">CatsBlock</h1>
-            <p>Private Messaging Reimagined</p>
-            <button id="btn-google-login" class="btn-insta">Login with Google</button>
+        <div class="login-content">
+            <h1 class="login-title">Log in to CatsBlock</h1>
+            <button id="btn-google-login" class="btn btn-primary">
+                <svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z"/></svg>
+                Log in with Google
+            </button>
+            <div class="login-footer">
+                By continuing, you agree to our <a href="#" id="link-tos-login">terms of service.</a>
+            </div>
+        </div>
+        <div id="login-loader" class="overlay-loader hidden">
+            <div class="spinner"></div>
         </div>
     </div>
 
     <div id="main-frame" class="frame hidden">
-        <header class="glass-header">
-            <h1 class="logo-text-sm">CatsBlock</h1>
+        <header>
+            <div class="brand">CatsBlock</div>
             <div class="header-actions">
-                <button id="menu-trigger" class="icon-btn-custom"><i class="bi bi-three-dots-vertical"></i></button>
-                <div id="main-menu" class="dropdown-glass">
-                    <div class="drop-item" id="menu-profile"><i class="bi bi-person"></i> My Profile</div>
-                    <div class="drop-item text-red" id="menu-logout"><i class="bi bi-box-arrow-right"></i> Logout</div>
+                <div id="menu-trigger" class="icon-btn">
+                    <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M12,16A2,2 0 0,1 14,18A2,2 0 0,1 12,20A2,2 0 0,1 10,18A2,2 0 0,1 12,16M12,10A2,2 0 0,1 14,12A2,2 0 0,1 12,14A2,2 0 0,1 10,12A2,2 0 0,1 12,10M12,4A2,2 0 0,1 14,6A2,2 0 0,1 12,8A2,2 0 0,1 10,6A2,2 0 0,1 12,4Z"/></svg>
+                </div>
+                <div id="main-menu" class="dropdown">
+                    <div class="dropdown-item" id="menu-profile">About your profile</div>
+                    <div class="dropdown-item" id="menu-settings">Settings</div>
+                    <div class="dropdown-item" id="menu-tos">Terms of service</div>
+                    <div class="dropdown-item text-red" id="menu-logout">Logout</div>
                 </div>
             </div>
         </header>
-        <div id="chat-list" class="scroll-area"></div>
-        <button class="fab-insta" id="btn-new-chat"><i class="bi bi-pencil-square"></i></button>
-    </div>
 
-    <div id="conversation-frame" class="frame hidden">
-        <header class="chat-header glass-header">
-            <button id="btn-close-chat" class="icon-btn-custom"><i class="bi bi-chevron-left"></i></button>
-            <div class="peer-info" id="view-peer-profile">
-                <img src="" id="chat-header-img" class="avatar-header">
-                <div class="meta">
-                    <span id="chat-header-name">User</span>
-                    <small id="peer-status">Online</small>
-                </div>
+        <div id="chat-list" class="scroll-area">
             </div>
-        </header>
-        
-        <div id="messages-list" class="msg-area"></div>
 
-        <div id="media-preview" class="media-preview hidden">
-            <div id="preview-content"></div>
-            <button id="btn-cancel-media" class="close-preview"><i class="bi bi-x-circle-fill"></i></button>
-        </div>
-
-        <div class="input-bar">
-            <div class="actions">
-                <label for="file-input" class="icon-btn-custom"><i class="bi bi-plus-lg"></i></label>
-                <input type="file" id="file-input" accept="image/*,video/*" hidden>
-                <button id="btn-audio" class="icon-btn-custom"><i class="bi bi-mic"></i></button>
-            </div>
-            <input type="text" id="msg-input" placeholder="Message..." autocomplete="off" maxlength="500">
-            <button id="btn-send" class="send-btn">Send</button>
-        </div>
-    </div>
-
-    <div id="profile-modal" class="modal-overlay hidden">
-        <div class="glass-modal">
-            <div class="modal-nav"><button data-close="profile-modal" class="icon-btn-custom"><i class="bi bi-x-lg"></i></button></div>
-            <div class="profile-content">
-                <img src="" id="p-img" class="p-avatar">
-                <h2 id="p-name"></h2>
-                <span id="p-id" class="badge"></span>
-                <textarea id="p-desc" class="p-bio" placeholder="Write something about yourself..."></textarea>
-                <button id="btn-save-bio" class="btn-insta-sm">Save Bio</button>
-            </div>
+        <div class="fab" id="btn-new-chat">
+            <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M14.06,9L15,9.94L5.92,19H5V18.08L14.06,9M17.66,3C17.41,3 17.15,3.1 16.96,3.29L15.13,5.12L18.88,8.87L20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18.17,3.09 17.92,3 17.66,3M14.06,6.19L3,17.25V21H6.75L17.81,9.94L14.06,6.19Z"/></svg>
         </div>
     </div>
 
     <div id="new-chat-modal" class="modal-overlay hidden">
-        <div class="glass-modal">
-            <h3>Start New Conversation</h3>
-            <input type="number" id="new-chat-id" placeholder="Enter Account ID" class="modern-input">
-            <div class="modal-footer">
-                <button class="btn-plain" data-close="new-chat-modal">Cancel</button>
-                <button class="btn-insta-sm" id="btn-create-chat">Create</button>
+        <div class="modal">
+            <div class="modal-header">
+                New Conversation
+                <span class="modal-close" data-close="new-chat-modal">
+                    <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/></svg>
+                </span>
+            </div>
+            <div class="modal-body">
+                <p class="modal-desc">Enter ID to chat.</p>
+                <div class="input-group">
+                    <label>Display name (Max 30)</label>
+                    <input type="text" id="new-chat-name" maxlength="30" minlength="1">
+                </div>
+                <div class="input-group">
+                    <label>Account ID</label>
+                    <input type="number" id="new-chat-id" placeholder="Ex: 1">
+                </div>
+                <button class="btn btn-primary full-width" id="btn-start-chat">Start Chat</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="conversation-frame" class="frame hidden">
+        <div class="chat-header">
+            <div class="chat-back" id="btn-close-chat">
+                <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
+            </div>
+            <div class="chat-user-info" id="chat-header-clickable">
+                <img src="" alt="" id="chat-header-img">
+                <div class="chat-header-text">
+                    <span id="chat-header-name">User</span>
+                    <span id="chat-header-status" class="status-subtitle">Offline</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="messages-container" id="messages-list"></div>
+
+        <input type="file" id="file-input-img" accept="image/png, image/jpeg, image/jpg" hidden>
+        <input type="file" id="file-input-video" accept="video/mp4, video/webm" hidden>
+
+        <div class="chat-input-area" id="input-area-text">
+            <div class="media-actions">
+                <button class="icon-btn-small" id="btn-upload-img">
+                    <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M8.5,13.5L11,16.5L14.5,12L19,18H5M21,19V5C21,3.89 20.1,3 19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19Z"/></svg>
+                </button>
+                <button class="icon-btn-small" id="btn-upload-video">
+                    <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M17,10.5V7A1,1 0 0,0 16,6H4A1,1 0 0,0 3,7V17A1,1 0 0,0 4,18H16A1,1 0 0,0 17,17V13.5L21,17.5V6.5L17,10.5Z"/></svg>
+                </button>
+            </div>
+            <input type="text" id="msg-input" placeholder="Message..." autocomplete="off">
+            <button class="icon-btn-small" id="btn-record-audio">
+                <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M12,14A3,3 0 0,0 15,11V5A3,3 0 0,0 12,2A3,3 0 0,0 9,5V11A3,3 0 0,0 12,14M19,11C19,14.53 16.39,17.44 13,17.93V21H11V17.93C7.61,17.44 5,14.53 5,11H7A5,5 0 0,0 12,16A5,5 0 0,0 17,11H19Z"/></svg>
+            </button>
+            <button class="icon-btn-send" id="btn-send-msg">
+                <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/></svg>
+            </button>
+        </div>
+
+        <div class="chat-input-area hidden" id="input-area-audio">
+            <button class="icon-btn-delete" id="btn-audio-trash">
+                <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"/></svg>
+            </button>
+            <div class="audio-visualizer" id="audio-visualizer">
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+            </div>
+            <div class="audio-timer" id="audio-timer">00:00</div>
+            <button class="icon-btn-send" id="btn-audio-send">
+                <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div id="settings-frame" class="frame hidden">
+        <div class="chat-header">
+            <div class="chat-back" id="btn-close-settings">
+                <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
+            </div>
+            <span class="header-title">Settings</span>
+        </div>
+        <div class="settings-content">
+            <h3>Display</h3>
+            <div class="input-group">
+                <label>Dark Mode</label>
+                <select id="setting-dark-mode">
+                    <option value="off">Disabled</option>
+                    <option value="on">Enabled</option>
+                </select>
+            </div>
+            <h3>Privacy</h3>
+            <div class="input-group">
+                <label>Accept new conversations</label>
+                <select id="setting-accept-new">
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Last seen</label>
+                <select id="setting-last-seen">
+                    <option value="all">All</option>
+                    <option value="nobody">Nobody</option>
+                </select>
+            </div>
+            <button class="btn btn-primary full-width mt-20" id="btn-save-settings">Save</button>
+        </div>
+    </div>
+
+    <div id="profile-details-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                Profile
+                <span class="modal-close" data-close="profile-details-modal">
+                     <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/></svg>
+                </span>
+            </div>
+            <div class="modal-body center-text">
+                <img src="" class="profile-lg-img" id="profile-modal-img">
+                <h2 id="profile-modal-name"></h2>
+                <div class="profile-stat" id="profile-modal-id"></div>
+                
+                <div class="profile-desc" id="profile-modal-desc"></div>
+                
+                <div id="profile-edit-container" class="hidden">
+                    <textarea id="profile-desc-input" maxlength="150" placeholder="Edit description..."></textarea>
+                    <button class="btn btn-primary full-width" id="btn-save-profile">Save Description</button>
+                </div>
+
+                <div class="profile-actions" id="profile-actions-others">
+                    <button class="btn btn-red-outline" id="btn-block-user">Block this account</button>
+                    <button class="btn btn-red-outline" id="btn-report-user">Report this profile</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="block-confirm-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-body">
+                <p>Are you sure you want to block this profile?</p>
+                <div class="modal-buttons">
+                    <button class="btn" data-close="block-confirm-modal">Never mind</button>
+                    <button class="btn btn-red" id="btn-confirm-block">Block</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="delete-chat-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-body">
+                <p>Do you really want to delete this conversation permanently?</p>
+                <div class="modal-buttons">
+                    <button class="btn btn-red" id="btn-confirm-delete-chat">Delete</button>
+                    <button class="btn" data-close="delete-chat-modal">Never mind</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="report-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">Report <span class="modal-close" data-close="report-modal">
+                 <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/></svg>
+            </span></div>
+            <div class="modal-body">
+                <p>To report this profile, show the conversations as proof and send them to the owner, named fmafioso on TikTok.</p>
             </div>
         </div>
     </div>
