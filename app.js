@@ -399,29 +399,24 @@ function renderMessage(msg, isMe, container) {
     const body = document.createElement('div');
     body.className = 'msg-body';
 
-
-        if (msg.type === 'text') {
-        const isTenor = msg.text.includes("tenor.com/");
-
-        if (isTenor) {
+    if (msg.type === 'text') {
+        if (msg.text.includes("tenor.com/")) {
             const img = document.createElement('img');
-            let gifId = "";
             
-            // Extrai o ID do GIF do link (curto ou longo)
-            if (msg.text.includes("/view/")) {
-                gifId = msg.text.split('-').pop();
-            } else {
-                gifId = msg.text.split('/').pop().replace('.gif', '');
-            }
+            // Pega a parte final do link e limpa o .gif se existir
+            let lastPart = msg.text.split('/').pop().replace('.gif', '');
+            
+            // Se for link longo, o ID é o que vem depois do último hífen
+            let gifId = lastPart.includes('-') ? lastPart.split('-').pop() : lastPart;
 
-            // Monta a URL direta da imagem
+            // Monta a URL direta para o servidor de mídia do Tenor
             img.src = `https://media.tenor.com/${gifId}/tenor.gif`;
             img.className = 'msg-media';
             img.style.maxWidth = '100%';
             img.style.borderRadius = '10px';
             img.style.display = 'block';
 
-            // Se der erro no link montado, mostra o texto original
+            // FALLBACK: Se o link de imagem falhar, mostra o texto para não ficar invisível
             img.onerror = () => {
                 img.remove();
                 body.textContent = msg.text;
@@ -429,10 +424,9 @@ function renderMessage(msg, isMe, container) {
 
             body.appendChild(img);
         } else {
-            // Se não for Tenor, é apenas um texto comum
             body.textContent = msg.text;
         }
-        }
+    }
     
     
 
