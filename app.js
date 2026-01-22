@@ -400,39 +400,49 @@ function renderMessage(msg, isMe, container) {
     body.className = 'msg-body';
 
             
-                
-            
-                    if (msg.type === 'text') {
+        if (msg.type === 'text') {
         if (msg.text.includes("tenor.com/")) {
-            const img = document.createElement('img');
-            
-            // Pega o ID (seja os números gigantes ou o código curto)
-            let parts = msg.text.trim().replace(/\/$/, "").split('/');
-            let lastPart = parts[parts.length - 1].replace('.gif', '');
+            // 1. Extração limpa do ID
+            let parts = msg.text.trim().split('/');
+            let lastPart = parts[parts.length - 1].split('?')[0].replace('.gif', '');
             let gifId = lastPart.includes('-') ? lastPart.split('-').pop() : lastPart;
 
-            // A URL QUE FUNCIONA PARA LINKS DE 19 DÍGITOS E CURTOS
-            img.src = `https://media.tenor.com/v1/${gifId}/tenor.gif`;
+            // 2. Criar a imagem com atributos de força
+            const img = document.createElement('img');
             
-            // Essencial para o Tenor não bloquear o seu chat
+            // Usamos a URL de visualização direta
+            img.src = `https://media.tenor.com/${gifId}/tenor.gif`;
+            
+            // ISSO resolve o problema de ficar invisível/vazio
             img.referrerPolicy = "no-referrer";
-            
-            img.className = 'msg-media';
             img.style.width = '100%';
-            img.style.borderRadius = '10px';
+            img.style.minWidth = '200px'; // Força a bolha a ter largura
+            img.style.minHeight = '150px'; // Força a bolha a ter altura inicial
             img.style.display = 'block';
+            img.style.borderRadius = '10px';
+            img.style.backgroundColor = '#333'; // Fica um cinza enquanto carrega
 
+            // 3. Quando carregar, removemos o tamanho fixo de espera
+            img.onload = () => {
+                img.style.minHeight = 'auto';
+            };
+
+            // 4. Se der erro real, aí sim mostra o link
             img.onerror = () => {
-                img.remove();
-                body.textContent = msg.text;
+                body.innerHTML = ""; // Limpa o "vazio"
+                const link = document.createElement('a');
+                link.href = msg.text;
+                link.target = "_blank";
+                link.textContent = "Ver GIF no Tenor";
+                link.style.color = "#00a8ff";
+                body.appendChild(link);
             };
 
             body.appendChild(img);
         } else {
             body.textContent = msg.text;
         }
-                    }
-    
+        }
     
     
     
