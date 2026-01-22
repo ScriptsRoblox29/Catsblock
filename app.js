@@ -255,7 +255,7 @@ document.getElementById('btn-start-chat').onclick = async () => {
     const name = nameInput.value.trim();
     const acId = parseInt(idInput.value);
     
-    if(!name || isNaN(acId)) return Toast.show("Preencha o nome e o ID corretamente", "error");
+    if(!name || isNaN(acId)) return Toast.show("Display name and ID not found.", "error");
     if(!auth.currentUser) return Toast.show("You need a token.", "error");
 
     try {
