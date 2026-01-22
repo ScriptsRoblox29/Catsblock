@@ -399,43 +399,44 @@ function renderMessage(msg, isMe, container) {
     const body = document.createElement('div');
     body.className = 'msg-body';
 
-        if (msg.type === 'text') {
+            if (msg.type === 'text') {
         if (msg.text.includes("tenor.com/")) {
             const img = document.createElement('img');
             
-            // 1. Remove qualquer "/" ou barra no final para não virar item vazio no split
-            let urlClean = msg.text.trim().replace(/\/$/, "");
-            
-            // 2. Pega a última parte do link (ID ou Nome-ID)
-            let parts = urlClean.split('/');
-            let lastPart = parts[parts.length - 1].replace('.gif', '');
-            
-            // 3. Extrai apenas os números (ID) se houver hífen, senão pega tudo
+            // 1. Extração garantida do ID
+            // Funciona para: .../view/nome-id E para .../id.gif
+            let urlParts = msg.text.split('/');
+            let lastPart = urlParts[urlParts.length - 1].replace('.gif', '');
             let gifId = lastPart.includes('-') ? lastPart.split('-').pop() : lastPart;
 
-            // 4. Se o link for do tipo longo com muitos números (como o do trollface)
-            // ele precisa do link direto correto
-            img.src = `https://media.tenor.com/${gifId}/tenor.gif`;
+            // 2. O NOVO ENDEREÇO (c.tenor.com)
+            // Esse é o servidor de cache que não exige tokens complexos
+            img.src = `https://c.tenor.com/${gifId}/tenor.gif`;
             
             img.className = 'msg-media';
-            img.style.minHeight = '50px'; // Garante que a bolha não fique invisível
             img.style.maxWidth = '100%';
             img.style.borderRadius = '10px';
             img.style.display = 'block';
+            img.style.minHeight = '100px'; // Evita que a bolha fique invisível enquanto carrega
 
-            img.onload = () => { img.style.minHeight = 'auto'; };
-
+            // 3. SE DER ERRO (Caso o ID seja muito novo e não esteja no cache c.)
             img.onerror = () => {
-                img.remove();
-                body.textContent = msg.text;
+                // Tenta o segundo servidor de backup antes de desistir
+                if (!img.src.includes("media.tenor.com")) {
+                    img.src = `https://media.tenor.com/images/${gifId}/tenor.gif`;
+                } else {
+                    img.remove();
+                    body.textContent = msg.text; // Mostra o link se tudo falhar
+                }
             };
 
             body.appendChild(img);
         } else {
             body.textContent = msg.text;
         }
-        }
+            }
     
+        
     
     
 
