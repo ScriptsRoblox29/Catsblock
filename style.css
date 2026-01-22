@@ -108,23 +108,14 @@ textarea { resize: vertical; min-height: 80px; }
 .chat-input-area { padding: 8px; border-top: 1px solid var(--border-color); display: flex; align-items: center; gap: 8px; background: var(--bg-color); flex-shrink: 0; min-height: 60px; }
 .chat-input-area input[type="text"] { flex: 1; padding: 10px 15px; border-radius: 20px; border: 1px solid var(--border-color); background: var(--secondary-bg); color: var(--text-color); }
 
-.media-actions { display: flex; gap: 5px; }
-.icon-btn-small { background: none; border: none; color: var(--accent-color); padding: 6px; cursor: pointer; border-radius: 50%; }
 .icon-btn-send { background: none; border: none; color: var(--accent-color); padding: 6px; cursor: pointer; margin-left: 4px; }
 .icon-btn-delete { background: none; border: none; color: var(--error-color); padding: 6px; cursor: pointer; }
-
-/* Audio Visualizer UI */
-.audio-visualizer { flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; height: 30px; margin: 0 10px; }
-.dot { width: 4px; background: var(--accent-color); border-radius: 2px; height: 4px; transition: height 0.1s ease; }
-.audio-timer { font-size: 0.85rem; color: var(--error-color); font-weight: bold; width: 40px; text-align: center; }
 
 /* Message Bubbles */
 .message-bubble { max-width: 75%; padding: 8px 12px; border-radius: 18px; font-size: 0.95rem; position: relative; word-wrap: break-word; margin-bottom: 2px; }
 .msg-me { align-self: flex-end; background: var(--accent-color); color: white; border-bottom-right-radius: 4px; }
 .msg-other { align-self: flex-start; background: var(--msg-out); border-bottom-left-radius: 4px; border: 1px solid var(--border-color); }
 
-.msg-media { max-width: 200px; border-radius: 12px; margin-top: 5px; display: block; }
-.msg-audio-player { width: 200px; height: 40px; }
 .msg-time { font-size: 0.65rem; text-align: right; margin-top: 4px; opacity: 0.7; }
 
 /* Profile Modal */
@@ -137,3 +128,48 @@ textarea { resize: vertical; min-height: 80px; }
 #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 10000; width: 90%; max-width: 350px; pointer-events: none; display: flex; flex-direction: column; gap: 10px; align-items: center; }
 .toast { background: var(--toast-bg); color: var(--toast-text); padding: 12px 20px; border-radius: 8px; font-size: 0.9rem; pointer-events: auto; }
             
+/* --- AJUSTES DE RESPONSIVIDADE --- */
+
+/* Ajuste Geral para PC e Telas Grandes */
+@media (min-width: 1024px) {
+    .frame {
+        max-width: 450px; /* Mantém o estilo de app no centro da tela */
+        margin: 0 auto;
+        border-left: 1px solid var(--border-color);
+        border-right: 1px solid var(--border-color);
+        left: 50%;
+        transform: translateX(-50%);
+    }
+    
+    .fab {
+        right: calc(50% - 200px); /* Deixa o botão flutuante dentro do limite do app */
+    }
+
+    #toast-container {
+        max-width: 400px;
+    }
+}
+
+/* Ajuste para Tablets (Telas médias) */
+@media (min-width: 600px) and (max-width: 1023px) {
+    .frame {
+        max-width: 500px;
+        margin: 0 auto;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+}
+
+/* Ajuste para Celulares Pequenos */
+@media (max-width: 360px) {
+    .brand { font-size: 1.3rem; }
+    .message-bubble { max-width: 85%; }
+    .chat-item { padding: 10px; }
+}
+
+/* Ajuste do campo de texto (agora que removemos os botões de mídia) */
+.chat-input-area input[type="text"] {
+    flex: 1;
+    width: 100%;
+    font-size: 16px; /* Evita que o iPhone dê zoom automático ao clicar */
+               }
