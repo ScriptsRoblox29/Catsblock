@@ -144,10 +144,21 @@ document.querySelectorAll('[data-close]').forEach(el => {
     el.onclick = () => document.getElementById(el.dataset.close).classList.add('hidden');
 });
 document.getElementById('menu-trigger').onclick = () => document.getElementById('main-menu').classList.toggle('show');
-window.onclick = (e) => { if(!e.target.closest('.header-actions')) document.getElementById('main-menu').classList.remove('show'); };
+window.onclick = (e) => { 
+    if(!e.target.closest('.header-actions')) document.getElementById('main-menu').classList.remove('show'); 
+};
 document.getElementById('menu-settings').onclick = () => Router.go('settings-frame');
 document.getElementById('btn-close-settings').onclick = () => Router.go('main-frame');
-document.getElementById('btn-new-chat').onclick = () => document.getElementById('new-chat-modal').classList.remove('hidden');
+
+// Use o novo ID aqui:
+document.getElementById('fab-abrir-modal').onclick = () => {
+    document.getElementById('new-chat-modal').classList.remove('hidden');
+};
+
+
+document.getElementById('menu-settings').onclick = () => Router.go('settings-frame');
+document.getElementById('btn-close-settings').onclick = () => Router.go('main-frame');
+
 
 // --- PERFIL E BLOQUEIO ---
 document.getElementById('menu-profile').onclick = () => {
@@ -590,5 +601,5 @@ function stopAndSendAudio() {
     mediaRecorder.stop();
     // Parar tracks do microfone para desligar a luz de gravação do navegador
     mediaRecorder.stream.getTracks().forEach(track => track.stop());
-        }
+}
     
