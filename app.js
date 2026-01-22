@@ -290,7 +290,7 @@ document.getElementById('btn-start-chat').onclick = async () => {
 
     } catch(e) { 
         console.error("Error:", e);
-        Toast.show("Error connecting to server.", "error"); 
+        Toast.show("The server denied your permission. Check if you are not blocked or if the other person is accepting new conversations.", "error"); 
     }
 };
 
