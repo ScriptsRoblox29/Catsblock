@@ -414,16 +414,51 @@ function renderMessage(msg, isMe, container) {
 
     const time = msg.createdAt ? new Date(msg.createdAt.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '...';
     
+function renderMessage(msg, isMe, container) {
+    const div = document.createElement('div');
+    div.className = `message-bubble ${isMe ? 'msg-me' : 'msg-other'}`;
+    
+    // 1. Criamos um elemento específico para o corpo da mensagem
+    const body = document.createElement('div');
+    body.className = 'msg-body';
+
+    if (msg.type === 'text') {
+        body.textContent = msg.text; 
+    } else if (msg.type === 'image') {
+        body.innerHTML = `<img src="${msg.url}" class="msg-media" style="max-width:100%;border-radius:10px">`;
+    } else if (msg.type === 'video') {
+        body.innerHTML = `<video src="${msg.url}" controls class="msg-media" style="max-width:100%;border-radius:10px"></video>`;
+    } else if (msg.type === 'audio') {
+        body.innerHTML = `<audio src="${msg.url}" controls class="msg-audio-player"></audio>`;
+    }
+
     // 2. Montamos a estrutura da bolha usando appendChild para manter o texto seguro
     div.appendChild(body);
-    
+
+    // --- NOVA LÓGICA DE DATA INTELIGENTE ---
+    let timeDisplay = '...';
+    if (msg.createdAt) {
+        const d = msg.createdAt.toDate();
+        const n = new Date();
+        const isToday = d.toDateString() === n.toDateString();
+        const isThisYear = d.getFullYear() === n.getFullYear();
+
+        if (isToday) {
+            timeDisplay = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } else if (isThisYear) {
+            timeDisplay = d.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
+        } else {
+            timeDisplay = d.toLocaleDateString([], { day: '2-digit', month: '2-digit', year: '2-digit' });
+        }
+    }
+
     const timeDiv = document.createElement('div');
     timeDiv.className = 'msg-time';
-    timeDiv.innerText = time;
+    timeDiv.innerText = timeDisplay; 
     div.appendChild(timeDiv);
 
     container.appendChild(div);
-}
+} // <--- Apenas uma chave aqui para fechar a função
 
 // --- ENVIO DE MENSAGENS E MÍDIA ---
 const msgInput = document.getElementById('msg-input');
