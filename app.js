@@ -400,39 +400,40 @@ function renderMessage(msg, isMe, container) {
     body.className = 'msg-body';
 
             
-                if (msg.type === 'text') {
+                
+            if (msg.type === 'text') {
         if (msg.text.includes("tenor.com/")) {
-            // 1. Pega o ID (aquela sequência de números gigante ou o código curto)
+            // 1. Extraímos o ID do link
             let parts = msg.text.split('/');
             let lastPart = parts[parts.length - 1].split('?')[0].replace('.gif', '');
             let gifId = lastPart.includes('-') ? lastPart.split('-').pop() : lastPart;
 
-            // 2. A URL MÁGICA: Adicionamos o sufixo "nanogif" ou "tinygif"
-            // Isso força o servidor do Tenor a entregar o arquivo direto
+            // 2. Criamos o elemento de imagem
             const img = document.createElement('img');
-            img.src = `https://media.tenor.com/${gifId}/tenor.gif?itemid=${gifId}`;
+            
+            // O SEGREDO: Usar o link de mídia do Google que não tem bloqueio de domínio
+            img.src = `https://media1.tenor.com/m/${gifId}/tenor.gif`;
+            
+            // ESSA LINHA É A CHAVE: Diz ao navegador para não enviar de qual site a imagem está vindo
+            img.referrerPolicy = "no-referrer"; 
             
             img.className = 'msg-media';
             img.style.width = '100%';
             img.style.borderRadius = '10px';
             img.style.display = 'block';
 
-            // 3. Fallback para o servidor de cache (se o principal falhar)
+            // Se ainda assim der erro, mostra o texto original
             img.onerror = () => {
-                img.src = `https://c.tenor.com/${gifId}/tenor.gif`;
-                img.onerror = () => {
-                    // Se tudo der errado, mostra o link clicável pelo menos
-                    body.innerHTML = `<a href="${msg.text}" target="_blank" style="color: #00a8ff; font-size: 12px;">Abrir GIF: Tenor</a>`;
-                };
+                img.remove();
+                body.textContent = msg.text;
             };
 
             body.appendChild(img);
         } else {
             body.textContent = msg.text;
         }
-                }
+            }
     
-        
     
     
 
