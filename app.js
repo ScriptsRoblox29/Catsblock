@@ -403,7 +403,7 @@ function renderMessage(msg, isMe, container) {
         
                 
             
-            if (msg.type === 'text') {
+                if (msg.type === 'text') {
         if (msg.text.includes("tenor.com/")) {
             const match = msg.text.match(/(\d+)$/);
             const postId = match ? match[1] : "";
@@ -414,9 +414,8 @@ function renderMessage(msg, isMe, container) {
                 body.style.minWidth = "200px"; 
                 body.style.maxWidth = "100%";
                 body.style.position = "relative";
-                body.style.minHeight = "200px"; // Altura mínima enquanto carrega
+                body.style.minHeight = "200px";
 
-                // Injetamos a div sem o link de texto e com um ícone de loading no fundo
                 body.innerHTML = `
                     <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);" class="loading-icon">
                         <div class="spinner"></div> 
@@ -429,43 +428,44 @@ function renderMessage(msg, isMe, container) {
                     </div>
                 `;
 
-                // CSS rápido para o Spinner (se não tiver no seu arquivo CSS)
                 if (!document.getElementById('tenor-style')) {
                     const style = document.createElement('style');
                     style.id = 'tenor-style';
                     style.innerHTML = `
-                        .spinner {
-                            width: 30px; height: 30px;
-                            border: 4px solid rgba(255,255,255,0.3);
-                            border-radius: 50%;
-                            border-top-color: #fff;
-                            animation: spin 1s ease-in-out infinite;
-                        }
+                        .spinner { width: 30px; height: 30px; border: 4px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; }
                         @keyframes spin { to { transform: rotate(360deg); } }
                         .tenor-gif-embed { overflow: hidden; border-radius: 8px; }
                     `;
                     document.head.appendChild(style);
                 }
 
-                // Script e renderização
+                // FUNÇÃO PARA ATIVAR O GIF
+                const triggerTenor = () => {
+                    if (window.Tenor) {
+                        window.Tenor.CheckPostElements();
+                        let i = 0;
+                        const itv = setInterval(() => {
+                            if (body.querySelector('iframe')) {
+                                body.style.minHeight = "auto";
+                                const loader = body.querySelector('.loading-icon');
+                                if(loader) loader.remove(); 
+                                clearInterval(itv);
+                            }
+                            if (i++ > 20) clearInterval(itv);
+                        }, 200);
+                    }
+                };
+
+                // Se o script não existe, cria e ativa ao carregar
                 if (!document.querySelector('script[src*="tenor.com/embed.js"]')) {
                     const script = document.createElement('script');
                     script.src = "https://tenor.com/embed.js";
                     script.async = true;
+                    script.onload = triggerTenor; // Ativa assim que o script baixar
                     document.body.appendChild(script);
-                } else if (window.Tenor) {
-                    let i = 0;
-                    const itv = setInterval(() => {
-                        window.Tenor.CheckPostElements();
-                        // Quando o iframe do Tenor aparece, a min-height pode resetar
-                        if (body.querySelector('iframe')) {
-                            body.style.minHeight = "auto";
-                            const loader = body.querySelector('.loading-icon');
-                            if(loader) loader.remove(); 
-                            clearInterval(itv);
-                        }
-                        if (i++ > 10) clearInterval(itv);
-                    }, 200);
+                } else {
+                    // Se o script já existe, ativa imediatamente
+                    triggerTenor();
                 }
             } else {
                 body.textContent = msg.text;
@@ -473,7 +473,8 @@ function renderMessage(msg, isMe, container) {
         } else {
             body.textContent = msg.text;
         }
-            }
+                }
+    
     
     
     
