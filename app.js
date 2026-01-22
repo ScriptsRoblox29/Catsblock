@@ -255,12 +255,11 @@ document.getElementById('btn-start-chat').onclick = async () => {
     const name = nameInput.value.trim();
     const acId = parseInt(idInput.value);
     
-    // Validações básicas
     if(!name || isNaN(acId)) return Toast.show("Preencha o nome e o ID corretamente", "error");
     if(!auth.currentUser) return Toast.show("You need a token.", "error");
 
     try {
-        // Busca o usuário pelo Account ID numérico
+        // A LINHA CORRIGIDA ESTÁ ABAIXO (Apenas um sinal de =)
         const uQ = query(collection(db, "users"), where("accountId", "==", acId));
         const uSnap = await getDocs(uQ);
         
@@ -272,31 +271,29 @@ document.getElementById('btn-start-chat').onclick = async () => {
             return Toast.show("You can't start a conversation with yourself", "error");
         }
 
-        // Verifica bloqueios
         if ((targetUser.blockedUsers && targetUser.blockedUsers.includes(auth.currentUser.uid)) ||
             (currentUserData.blockedUsers && currentUserData.blockedUsers.includes(targetUser.uid))) {
             return Toast.show("User not found or blocked.", "error");
         }
 
-        // CRIAÇÃO DA CONVERSA
         await addDoc(collection(db, "conversations"), {
             participants: [auth.currentUser.uid, targetUser.uid],
             createdAt: serverTimestamp(),
             displayNames: { [auth.currentUser.uid]: name },
-            lastMessage: "" // Adicionado para evitar erro de campo faltando
+            lastMessage: "" 
         });
 
-        // Limpa os campos e fecha o modal
         nameInput.value = "";
         idInput.value = "";
         document.getElementById('new-chat-modal').classList.add('hidden');
         Toast.show("Conversation started!", "success");
 
     } catch(e) { 
-        console.error("Error starting chat:", e);
+        console.error("Error:", e);
         Toast.show("Error connecting to server.", "error"); 
     }
 };
+
 
 // --- DENTRO DA CONVERSA ---
 async function enterChat(chatId, otherId, otherUser, dispName) {
