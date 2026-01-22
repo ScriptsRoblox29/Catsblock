@@ -26,15 +26,6 @@ let activeUnsubscribes = [];
 let msgRateLimit = { count: 0, start: 0, blockedUntil: 0 };
 let lastVisibleMsg = null; // Para paginação futura se precisar
 
-// Váriaveis de Áudio
-let isRecording = false;
-let mediaRecorder = null;
-let audioChunks = [];
-let audioInterval = null;
-let recordingStartTime = 0;
-let analyser = null;
-let dataArray = null;
-
 // --- UTILITÁRIOS ---
 const Toast = {
     show: (text, type = 'info') => {
@@ -257,40 +248,57 @@ function confirmDeleteChat(chatId) {
     };
 }
 
-// Iniciar nova conversa
+// Iniciar nova conversa (VERSÃO CORRIGIDA)
 document.getElementById('btn-start-chat').onclick = async () => {
-    const name = document.getElementById('new-chat-name').value;
-    const acId = parseInt(document.getElementById('new-chat-id').value);
+    const nameInput = document.getElementById('new-chat-name');
+    const idInput = document.getElementById('new-chat-id');
+    const name = nameInput.value.trim();
+    const acId = parseInt(idInput.value);
     
-    if(!name || !acId) return Toast.show("Invalid fields", "error");
-    if(!auth.currentUser) return Toast.show("Token missing", "error");
-
-    const uQ = query(collection(db, "users"), where("accountId", "==", acId));
-    const uSnap = await getDocs(uQ);
-    
-    if(uSnap.empty) return Toast.show("User ID not found", "error");
-    const targetUser = uSnap.docs[0].data();
-    
-    if(targetUser.uid === auth.currentUser.uid) return Toast.show("Cannot chat with yourself", "error");
-
-    // Verifica bloqueio antes de criar
-    if ((targetUser.blockedUsers && targetUser.blockedUsers.includes(auth.currentUser.uid)) ||
-        (currentUserData.blockedUsers && currentUserData.blockedUsers.includes(targetUser.uid))) {
-        return Toast.show("Account not found (Blocked)", "error");
-    }
+    // Validações básicas
+    if(!name || isNaN(acId)) return Toast.show("Preencha o nome e o ID corretamente", "error");
+    if(!auth.currentUser) return Toast.show("You need a token.", "error");
 
     try {
+        // Busca o usuário pelo Account ID numérico
+        const uQ = query(collection(db, "users"), where("accountId", "==", acId));
+        const uSnap = await getDocs(uQ);
+        
+        if(uSnap.empty) return Toast.show("Account ID not found.", "error");
+        
+        const targetUser = uSnap.docs[0].data();
+        
+        if(targetUser.uid === auth.currentUser.uid) {
+            return Toast.show("You can't start a conversation with yourself", "error");
+        }
+
+        // Verifica bloqueios
+        if ((targetUser.blockedUsers && targetUser.blockedUsers.includes(auth.currentUser.uid)) ||
+            (currentUserData.blockedUsers && currentUserData.blockedUsers.includes(targetUser.uid))) {
+            return Toast.show("User not found or blocked.", "error");
+        }
+
+        // CRIAÇÃO DA CONVERSA
         await addDoc(collection(db, "conversations"), {
             participants: [auth.currentUser.uid, targetUser.uid],
-            targetUid: targetUser.uid, 
             createdAt: serverTimestamp(),
-            displayNames: { [auth.currentUser.uid]: name }
+            displayNames: { [auth.currentUser.uid]: name },
+            lastMessage: "" // Adicionado para evitar erro de campo faltando
         });
+
+        // Limpa os campos e fecha o modal
+        nameInput.value = "";
+        idInput.value = "";
         document.getElementById('new-chat-modal').classList.add('hidden');
-        Toast.show("Chat started!", "success");
-    } catch(e) { Toast.show("Error starting chat.", "error"); }
+        Toast.show("Conversation started!", "success");
+
+    } catch(e) { 
+        console.error("Error starting chat:", e);
+        Toast.show("Error connecting to server.", "error"); 
+    }
 };
-        // --- DENTRO DA CONVERSA ---
+
+// --- DENTRO DA CONVERSA ---
 async function enterChat(chatId, otherId, otherUser, dispName) {
     currentChatId = chatId;
     Router.go('conversation-frame');
@@ -426,55 +434,32 @@ const msgInput = document.getElementById('msg-input');
 // 1. Envio de Texto
 document.getElementById('btn-send-msg').onclick = () => sendWrapper('text', msgInput.value);
 
-async function sendWrapper(type, content, file = null) {
-    if(!currentChatId) return;
-    if(type === 'text' && !content.trim()) return;
+async function sendWrapper(type, content) {
+    if(!currentChatId || type !== 'text' || !content.trim()) return;
 
-    // ANTISPAM: 5 mensagens em 10 segundos
+    // Antispam
     const now = Date.now();
-    // Se estiver bloqueado temporariamente
-    if(now < msgRateLimit.blockedUntil) return Toast.show(`Spam limit. Wait.`, "error");
-    
-    // Reseta janela se passou 10s
-    if(now - msgRateLimit.start > 10000) {
-        msgRateLimit = { count: 0, start: now, blockedUntil: 0 };
-    }
-    
-    // Verifica limite
+    if(now < msgRateLimit.blockedUntil) return Toast.show(`Slow down, buddy!`, "error");
+    if(now - msgRateLimit.start > 10000) msgRateLimit = { count: 0, start: now, blockedUntil: 0 };
     if(msgRateLimit.count >= 5) {
-        msgRateLimit.blockedUntil = now + 10000; // Bloqueia por 10s
+        msgRateLimit.blockedUntil = now + 10000;
         return Toast.show("Slow down! Wait 10s.", "error");
-    }
-
-    // Upload de Arquivo (Se houver)
-    let url = "";
-    if (file) {
-        try {
-            // Caminho: chat_media/ID_CHAT/TIMESTAMP_NOME
-            const storageRef = ref(storage, `chat_media/${currentChatId}/${Date.now()}_${file.name}`);
-            const res = await uploadBytes(storageRef, file);
-            url = await getDownloadURL(res.ref);
-        } catch(e) {
-            return Toast.show("Upload failed", "error");
-        }
     }
 
     try {
         await addDoc(collection(db, "conversations", currentChatId, "messages"), {
-            text: type === 'text' ? content : "",
-            url: url,
-            type: type, // text, image, video, audio
+            text: content,
+            type: 'text',
             senderId: auth.currentUser.uid,
             createdAt: serverTimestamp()
         });
-        
         msgInput.value = '';
         msgRateLimit.count++;
     } catch(e) {
-        // Se falhar (ex: bloqueado ou regras firebase negarem)
         Toast.show("Failed to send.", "error");
     }
 }
+
 
 // 2. Inputs de Imagem e Vídeo
 const imgInput = document.getElementById('file-input-img');
@@ -589,5 +574,4 @@ function stopAndSendAudio() {
     mediaRecorder.stop();
     // Parar tracks do microfone para desligar a luz de gravação do navegador
     mediaRecorder.stream.getTracks().forEach(track => track.stop());
-                                       }
-                                      
+}
