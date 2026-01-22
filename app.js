@@ -401,27 +401,56 @@ function renderMessage(msg, isMe, container) {
 
             
         
-        if (msg.type === 'text') {
+            if (msg.type === 'text') {
         if (msg.text.includes("tenor.com/")) {
-            // 1. Extrai o ID
+            // 1. Extrai o ID (numérico ou código)
             let parts = msg.text.trim().split('/');
             let lastPart = parts[parts.length - 1].split('?')[0].replace('.gif', '');
             let gifId = lastPart.includes('-') ? lastPart.split('-').pop() : lastPart;
 
-            // 2. Injeta o HTML direto com estilos de visibilidade forçada
-            body.innerHTML = `
-                <div style="min-width: 200px; min-height: 150px; background: #444; border-radius: 10px; overflow: hidden;">
-                    <img src="https://media.tenor.com/${gifId}/tenor.gif" 
-                         referrerpolicy="no-referrer"
-                         style="width: 100%; display: block; border-radius: 10px;"
-                         onload="this.parentElement.style.minHeight='auto'; this.parentElement.style.background='transparent';"
-                         onerror="this.style.display='none'; this.parentElement.innerHTML='<a href=\'${msg.text}\' target=\'_blank\' style=\'color:#00a8ff; padding:10px; display:block;\'>Abrir GIF (Tenor)</a>';">
-                </div>
-            `;
+            // 2. Criamos o container com fundo cinza para não sumir
+            body.style.minWidth = "200px";
+            body.style.minHeight = "150px";
+            body.style.backgroundColor = "#333";
+            body.style.borderRadius = "10px";
+            body.style.overflow = "hidden";
+
+            const img = document.createElement('img');
+            img.style.width = '100%';
+            img.style.display = 'block';
+            img.referrerPolicy = "no-referrer";
+
+            // Tentativa 1: O servidor de visualização universal
+            img.src = `https://media.tenor.com/${gifId}/tenor.gif`;
+
+            img.onload = () => {
+                // Se carregar, removemos o fundo cinza
+                body.style.backgroundColor = "transparent";
+                body.style.minHeight = "auto";
+            };
+
+            img.onerror = () => {
+                // Tentativa 2: Se falhar (comum em IDs longos), tenta o servidor V1
+                if (!img.src.includes("/v1/")) {
+                    img.src = `https://media.tenor.com/v1/${gifId}/tenor.gif`;
+                } 
+                // Tentativa 3: Se falhar de novo, tenta o servidor de cache 'c'
+                else if (!img.src.includes("c.tenor.com")) {
+                    img.src = `https://c.tenor.com/${gifId}/tenor.gif`;
+                }
+                else {
+                    // Se TUDO falhar, mostra o link clicável para não ficar o quadrado vazio
+                    body.innerHTML = `<a href="${msg.text}" target="_blank" style="color:#00a8ff; padding:10px; display:block; font-size:12px;">Abrir GIF no Tenor</a>`;
+                    body.style.minHeight = "auto";
+                }
+            };
+
+            body.appendChild(img);
         } else {
             body.textContent = msg.text;
         }
-        }
+            }
+    
     
     
 
