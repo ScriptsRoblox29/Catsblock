@@ -401,28 +401,28 @@ function renderMessage(msg, isMe, container) {
 
             
                 
-            if (msg.type === 'text') {
+            
+                if (msg.type === 'text') {
         if (msg.text.includes("tenor.com/")) {
-            // 1. Extraímos o ID do link
-            let parts = msg.text.split('/');
-            let lastPart = parts[parts.length - 1].split('?')[0].replace('.gif', '');
-            let gifId = lastPart.includes('-') ? lastPart.split('-').pop() : lastPart;
-
-            // 2. Criamos o elemento de imagem
             const img = document.createElement('img');
             
-            // O SEGREDO: Usar o link de mídia do Google que não tem bloqueio de domínio
+            // 1. Pega o ID (aquela sequência de números no final do link)
+            // Ex: de ...8585429072494033560 ele extrai só os números
+            let gifId = msg.text.match(/\d+$/) || msg.text.split('/').pop().replace('.gif', '');
+            if (Array.isArray(gifId)) gifId = gifId[0];
+
+            // 2. O LINK DIRETO (Usando media1 e o sufixo /tenor.gif)
             img.src = `https://media1.tenor.com/m/${gifId}/tenor.gif`;
             
-            // ESSA LINHA É A CHAVE: Diz ao navegador para não enviar de qual site a imagem está vindo
-            img.referrerPolicy = "no-referrer"; 
+            // 3. REMOVE O BLOQUEIO: Isso impede o Tenor de saber que o link vem do seu site
+            img.setAttribute('referrerpolicy', 'no-referrer');
             
             img.className = 'msg-media';
             img.style.width = '100%';
             img.style.borderRadius = '10px';
             img.style.display = 'block';
 
-            // Se ainda assim der erro, mostra o texto original
+            // Se der erro, ele volta a ser texto, mas agora o link está certo
             img.onerror = () => {
                 img.remove();
                 body.textContent = msg.text;
@@ -432,7 +432,8 @@ function renderMessage(msg, isMe, container) {
         } else {
             body.textContent = msg.text;
         }
-            }
+                }
+    
     
     
     
