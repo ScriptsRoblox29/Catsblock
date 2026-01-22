@@ -400,42 +400,42 @@ function renderMessage(msg, isMe, container) {
     body.className = 'msg-body';
 
             
-            if (msg.type === 'text') {
-        if (msg.text.includes("tenor.com/")) {
-            // 1. Extrair o ID de forma agressiva
-            let gifId = msg.text.match(/([0-9]+)$|(?<=\/)[a-zA-Z0-9]+(?=\.gif|$)/);
-            gifId = gifId ? gifId[0] : "";
             
-            console.log("ID extraído do Tenor:", gifId); // Veja isso no F12 do navegador
+        if (msg.type === 'text') {
+        if (msg.text.includes("tenor.com/")) {
+            // 1. Extraímos o ID usando uma lógica mais simples
+            // Pegamos a última parte do link e removemos o ".gif"
+            let parts = msg.text.split('/');
+            let lastPart = parts[parts.length - 1].split('?')[0].replace('.gif', '');
+            let gifId = lastPart.includes('-') ? lastPart.split('-').pop() : lastPart;
 
-            if (gifId) {
-                // Criamos um container para garantir que a bolha tenha tamanho
-                body.style.minWidth = "150px";
-                body.style.minHeight = "150px";
-                
-                // Usamos o servidor de visualização que o Tenor não bloqueia
-                body.innerHTML = `
-                    <img src="https://media.tenor.com/${gifId}/tenor.gif" 
-                         class="msg-media" 
-                         style="width:100%; border-radius:10px; display:block;"
-                         onload="this.parentElement.style.minHeight='auto'; this.parentElement.style.minWidth='auto';"
-                         onerror="this.onerror=null; this.src='https://c.tenor.com/${gifId}/tenor.gif';">
-                `;
-                
-                // Backup de segurança: se após 5 segundos não carregar nada, vira texto
-                setTimeout(() => {
-                    if (body.innerHTML.includes('img') && body.querySelector('img').naturalWidth === 0) {
-                        body.textContent = msg.text;
-                    }
-                }, 5000);
+            // 2. Criamos um elemento de imagem
+            const img = document.createElement('img');
+            
+            // Usamos este formato que é o link de "preview" de alta qualidade do Tenor
+            img.src = `https://media.tenor.com/${gifId}/tenor.gif`;
+            
+            img.className = 'msg-media';
+            img.style.width = '100%';
+            img.style.borderRadius = '10px';
+            img.style.display = 'block';
 
-            } else {
-                body.textContent = msg.text;
-            }
+            // 3. O SEGREDO: Se o link acima falhar, usamos o servidor "c" que é o cache público
+            img.onerror = () => {
+                img.src = `https://c.tenor.com/${gifId}/tenor.gif`;
+                
+                // Se o segundo também falhar, aí sim voltamos para texto
+                img.onerror = () => {
+                    body.innerHTML = ''; 
+                    body.textContent = msg.text;
+                };
+            };
+
+            body.appendChild(img);
         } else {
             body.textContent = msg.text;
         }
-            }
+        }
     
     
     
