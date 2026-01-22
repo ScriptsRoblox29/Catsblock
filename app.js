@@ -290,7 +290,7 @@ document.getElementById('btn-start-chat').onclick = async () => {
 
     } catch(e) { 
         console.error("Error:", e);
-        Toast.show("The server denied your permission. Check if you are not blocked or if the other person is accepting new conversations.", "error"); 
+        Toast.show("The person is not accepting new conversations or you are blocked.", "error"); 
     }
 };
 
