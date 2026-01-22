@@ -399,44 +399,44 @@ function renderMessage(msg, isMe, container) {
     const body = document.createElement('div');
     body.className = 'msg-body';
 
+            
             if (msg.type === 'text') {
         if (msg.text.includes("tenor.com/")) {
-            const img = document.createElement('img');
+            // 1. Extrair o ID de forma agressiva
+            let gifId = msg.text.match(/([0-9]+)$|(?<=\/)[a-zA-Z0-9]+(?=\.gif|$)/);
+            gifId = gifId ? gifId[0] : "";
             
-            // 1. Extração garantida do ID
-            // Funciona para: .../view/nome-id E para .../id.gif
-            let urlParts = msg.text.split('/');
-            let lastPart = urlParts[urlParts.length - 1].replace('.gif', '');
-            let gifId = lastPart.includes('-') ? lastPart.split('-').pop() : lastPart;
+            console.log("ID extraído do Tenor:", gifId); // Veja isso no F12 do navegador
 
-            // 2. O NOVO ENDEREÇO (c.tenor.com)
-            // Esse é o servidor de cache que não exige tokens complexos
-            img.src = `https://c.tenor.com/${gifId}/tenor.gif`;
-            
-            img.className = 'msg-media';
-            img.style.maxWidth = '100%';
-            img.style.borderRadius = '10px';
-            img.style.display = 'block';
-            img.style.minHeight = '100px'; // Evita que a bolha fique invisível enquanto carrega
+            if (gifId) {
+                // Criamos um container para garantir que a bolha tenha tamanho
+                body.style.minWidth = "150px";
+                body.style.minHeight = "150px";
+                
+                // Usamos o servidor de visualização que o Tenor não bloqueia
+                body.innerHTML = `
+                    <img src="https://media.tenor.com/${gifId}/tenor.gif" 
+                         class="msg-media" 
+                         style="width:100%; border-radius:10px; display:block;"
+                         onload="this.parentElement.style.minHeight='auto'; this.parentElement.style.minWidth='auto';"
+                         onerror="this.onerror=null; this.src='https://c.tenor.com/${gifId}/tenor.gif';">
+                `;
+                
+                // Backup de segurança: se após 5 segundos não carregar nada, vira texto
+                setTimeout(() => {
+                    if (body.innerHTML.includes('img') && body.querySelector('img').naturalWidth === 0) {
+                        body.textContent = msg.text;
+                    }
+                }, 5000);
 
-            // 3. SE DER ERRO (Caso o ID seja muito novo e não esteja no cache c.)
-            img.onerror = () => {
-                // Tenta o segundo servidor de backup antes de desistir
-                if (!img.src.includes("media.tenor.com")) {
-                    img.src = `https://media.tenor.com/images/${gifId}/tenor.gif`;
-                } else {
-                    img.remove();
-                    body.textContent = msg.text; // Mostra o link se tudo falhar
-                }
-            };
-
-            body.appendChild(img);
+            } else {
+                body.textContent = msg.text;
+            }
         } else {
             body.textContent = msg.text;
         }
             }
     
-        
     
     
 
