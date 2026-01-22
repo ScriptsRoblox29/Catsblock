@@ -400,50 +400,28 @@ function renderMessage(msg, isMe, container) {
     body.className = 'msg-body';
 
             
+        
         if (msg.type === 'text') {
         if (msg.text.includes("tenor.com/")) {
-            // 1. Extração limpa do ID
+            // 1. Extrai o ID
             let parts = msg.text.trim().split('/');
             let lastPart = parts[parts.length - 1].split('?')[0].replace('.gif', '');
             let gifId = lastPart.includes('-') ? lastPart.split('-').pop() : lastPart;
 
-            // 2. Criar a imagem com atributos de força
-            const img = document.createElement('img');
-            
-            // Usamos a URL de visualização direta
-            img.src = `https://media.tenor.com/${gifId}/tenor.gif`;
-            
-            // ISSO resolve o problema de ficar invisível/vazio
-            img.referrerPolicy = "no-referrer";
-            img.style.width = '100%';
-            img.style.minWidth = '200px'; // Força a bolha a ter largura
-            img.style.minHeight = '150px'; // Força a bolha a ter altura inicial
-            img.style.display = 'block';
-            img.style.borderRadius = '10px';
-            img.style.backgroundColor = '#333'; // Fica um cinza enquanto carrega
-
-            // 3. Quando carregar, removemos o tamanho fixo de espera
-            img.onload = () => {
-                img.style.minHeight = 'auto';
-            };
-
-            // 4. Se der erro real, aí sim mostra o link
-            img.onerror = () => {
-                body.innerHTML = ""; // Limpa o "vazio"
-                const link = document.createElement('a');
-                link.href = msg.text;
-                link.target = "_blank";
-                link.textContent = "Ver GIF no Tenor";
-                link.style.color = "#00a8ff";
-                body.appendChild(link);
-            };
-
-            body.appendChild(img);
+            // 2. Injeta o HTML direto com estilos de visibilidade forçada
+            body.innerHTML = `
+                <div style="min-width: 200px; min-height: 150px; background: #444; border-radius: 10px; overflow: hidden;">
+                    <img src="https://media.tenor.com/${gifId}/tenor.gif" 
+                         referrerpolicy="no-referrer"
+                         style="width: 100%; display: block; border-radius: 10px;"
+                         onload="this.parentElement.style.minHeight='auto'; this.parentElement.style.background='transparent';"
+                         onerror="this.style.display='none'; this.parentElement.innerHTML='<a href=\'${msg.text}\' target=\'_blank\' style=\'color:#00a8ff; padding:10px; display:block;\'>Abrir GIF (Tenor)</a>';">
+                </div>
+            `;
         } else {
             body.textContent = msg.text;
         }
         }
-    
     
     
 
