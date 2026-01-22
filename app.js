@@ -402,17 +402,18 @@ function renderMessage(msg, isMe, container) {
             
         
                 
-        if (msg.type === 'text') {
+            if (msg.type === 'text') {
         if (msg.text.includes("tenor.com/")) {
             const match = msg.text.match(/(\d+)$/);
             const postId = match ? match[1] : "";
 
             if (postId) {
-                // Criamos um container para controlar o tamanho
-                body.style.width = "100%";
-                body.style.maxWidth = "300px"; // Limite máximo
-                body.style.minWidth = "250px"; // Garante que não fique pequeno
-                body.style.margin = "5px 0";
+                // Definindo um tamanho mediano fixo para o container
+                // Isso força o embed do Tenor a ocupar esse espaço
+                body.style.width = "400px"; 
+                body.style.maxWidth = "90vw"; // Garante que não estoure em celulares
+                body.style.minHeight = "200px"; // Evita que a bolha suma antes de carregar
+                body.style.display = "block";
 
                 body.innerHTML = `
                     <div class="tenor-gif-embed" 
@@ -423,15 +424,22 @@ function renderMessage(msg, isMe, container) {
                     </div>
                 `;
 
-                // Injeta o script se não existir
                 if (!document.querySelector('script[src*="tenor.com/embed.js"]')) {
                     const script = document.createElement('script');
                     script.src = "https://tenor.com/embed.js";
                     script.async = true;
                     document.body.appendChild(script);
-                } else if (window.Tenor) {
-                    // Força a renderização
-                    setTimeout(() => { window.Tenor.CheckPostElements(); }, 100);
+                } else {
+                    // O segredo para chats dinâmicos é chamar isso repetidamente
+                    // pois o embed do Tenor é instável durante a inserção no DOM
+                    let attempts = 0;
+                    const interval = setInterval(() => {
+                        if (window.Tenor) {
+                            window.Tenor.CheckPostElements();
+                            attempts++;
+                        }
+                        if (attempts > 5) clearInterval(interval);
+                    }, 200);
                 }
             } else {
                 body.textContent = msg.text;
@@ -439,7 +447,8 @@ function renderMessage(msg, isMe, container) {
         } else {
             body.textContent = msg.text;
         }
-        }
+            }
+    
     
     
     
