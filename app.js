@@ -399,31 +399,41 @@ function renderMessage(msg, isMe, container) {
     const body = document.createElement('div');
     body.className = 'msg-body';
 
+
         if (msg.type === 'text') {
-        // Se for um link do Tenor, a gente "engana" o navegador para exibir o GIF direto
-        if (msg.text.includes("tenor.com/view/")) {
+        const isTenor = msg.text.includes("tenor.com/");
+
+        if (isTenor) {
             const img = document.createElement('img');
+            let gifId = "";
             
-            // O truque: Adicionar ".gif" no final do link faz o Tenor entregar a imagem pura
-            img.src = msg.text + ".gif"; 
-            
+            // Extrai o ID do GIF do link (curto ou longo)
+            if (msg.text.includes("/view/")) {
+                gifId = msg.text.split('-').pop();
+            } else {
+                gifId = msg.text.split('/').pop().replace('.gif', '');
+            }
+
+            // Monta a URL direta da imagem
+            img.src = `https://media.tenor.com/${gifId}/tenor.gif`;
             img.className = 'msg-media';
             img.style.maxWidth = '100%';
             img.style.borderRadius = '10px';
             img.style.display = 'block';
-            
-            // Caso o link dê erro (não seja um GIF válido), ele volta a ser texto
+
+            // Se der erro no link montado, mostra o texto original
             img.onerror = () => {
                 img.remove();
                 body.textContent = msg.text;
             };
-            
+
             body.appendChild(img);
         } else {
-            // Se for texto normal, segue a vida
-            body.textContent = msg.text; 
+            // Se não for Tenor, é apenas um texto comum
+            body.textContent = msg.text;
         }
         }
+    
     
 
     // 1. Primeiro você coloca o corpo na bolha
