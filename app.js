@@ -290,6 +290,7 @@ document.getElementById('btn-start-chat').onclick = async () => {
         Toast.show("Chat started!", "success");
     } catch(e) { Toast.show("Error starting chat.", "error"); }
 };
+
 // --- DENTRO DA CONVERSA ---
 async function enterChat(chatId, otherId, otherUser, dispName) {
     currentChatId = chatId;
@@ -391,14 +392,32 @@ function renderMessage(msg, isMe, container) {
     const div = document.createElement('div');
     div.className = `message-bubble ${isMe ? 'msg-me' : 'msg-other'}`;
     
-    let content = "";
-    if (msg.type === 'text') content = `<div>${msg.text}</div>`;
-    else if (msg.type === 'image') content = `<img src="${msg.url}" class="msg-media" style="max-width:100%;border-radius:10px">`;
-    else if (msg.type === 'video') content = `<video src="${msg.url}" controls class="msg-media" style="max-width:100%;border-radius:10px"></video>`;
-    else if (msg.type === 'audio') content = `<audio src="${msg.url}" controls class="msg-audio-player"></audio>`;
+    // 1. Criamos um elemento específico para o corpo da mensagem
+    const body = document.createElement('div');
+    body.className = 'msg-body';
+
+    if (msg.type === 'text') {
+        // --- AQUI ESTÁ A MUDANÇA CRUCIAL ---
+        // textContent trata tudo como texto literal, ignorando tags <script>, <div>, etc.
+        body.textContent = msg.text; 
+    } else if (msg.type === 'image') {
+        body.innerHTML = `<img src="${msg.url}" class="msg-media" style="max-width:100%;border-radius:10px">`;
+    } else if (msg.type === 'video') {
+        body.innerHTML = `<video src="${msg.url}" controls class="msg-media" style="max-width:100%;border-radius:10px"></video>`;
+    } else if (msg.type === 'audio') {
+        body.innerHTML = `<audio src="${msg.url}" controls class="msg-audio-player"></audio>`;
+    }
 
     const time = msg.createdAt ? new Date(msg.createdAt.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '...';
-    div.innerHTML = `${content}<div class="msg-time">${time}</div>`;
+    
+    // 2. Montamos a estrutura da bolha usando appendChild para manter o texto seguro
+    div.appendChild(body);
+    
+    const timeDiv = document.createElement('div');
+    timeDiv.className = 'msg-time';
+    timeDiv.innerText = time;
+    div.appendChild(timeDiv);
+
     container.appendChild(div);
 }
 
@@ -571,5 +590,5 @@ function stopAndSendAudio() {
     mediaRecorder.stop();
     // Parar tracks do microfone para desligar a luz de gravação do navegador
     mediaRecorder.stream.getTracks().forEach(track => track.stop());
-                }
-        
+        }
+    
