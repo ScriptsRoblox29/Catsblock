@@ -400,34 +400,29 @@ function renderMessage(msg, isMe, container) {
     body.className = 'msg-body';
 
             
-            
-        if (msg.type === 'text') {
+                if (msg.type === 'text') {
         if (msg.text.includes("tenor.com/")) {
-            // 1. Extraímos o ID usando uma lógica mais simples
-            // Pegamos a última parte do link e removemos o ".gif"
+            // 1. Pega o ID (aquela sequência de números gigante ou o código curto)
             let parts = msg.text.split('/');
             let lastPart = parts[parts.length - 1].split('?')[0].replace('.gif', '');
             let gifId = lastPart.includes('-') ? lastPart.split('-').pop() : lastPart;
 
-            // 2. Criamos um elemento de imagem
+            // 2. A URL MÁGICA: Adicionamos o sufixo "nanogif" ou "tinygif"
+            // Isso força o servidor do Tenor a entregar o arquivo direto
             const img = document.createElement('img');
-            
-            // Usamos este formato que é o link de "preview" de alta qualidade do Tenor
-            img.src = `https://media.tenor.com/${gifId}/tenor.gif`;
+            img.src = `https://media.tenor.com/${gifId}/tenor.gif?itemid=${gifId}`;
             
             img.className = 'msg-media';
             img.style.width = '100%';
             img.style.borderRadius = '10px';
             img.style.display = 'block';
 
-            // 3. O SEGREDO: Se o link acima falhar, usamos o servidor "c" que é o cache público
+            // 3. Fallback para o servidor de cache (se o principal falhar)
             img.onerror = () => {
                 img.src = `https://c.tenor.com/${gifId}/tenor.gif`;
-                
-                // Se o segundo também falhar, aí sim voltamos para texto
                 img.onerror = () => {
-                    body.innerHTML = ''; 
-                    body.textContent = msg.text;
+                    // Se tudo der errado, mostra o link clicável pelo menos
+                    body.innerHTML = `<a href="${msg.text}" target="_blank" style="color: #00a8ff; font-size: 12px;">Abrir GIF: Tenor</a>`;
                 };
             };
 
@@ -435,8 +430,9 @@ function renderMessage(msg, isMe, container) {
         } else {
             body.textContent = msg.text;
         }
-        }
+                }
     
+        
     
     
 
