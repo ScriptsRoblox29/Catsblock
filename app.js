@@ -410,7 +410,7 @@ function renderMessage(msg, isMe, container) {
             if (postId) {
                 // Definindo um tamanho mediano fixo para o container
                 // Isso força o embed do Tenor a ocupar esse espaço
-                body.style.width = "400px"; 
+                body.style.width = "250px"; 
                 body.style.maxWidth = "90vw"; // Garante que não estoure em celulares
                 body.style.minHeight = "200px"; // Evita que a bolha suma antes de carregar
                 body.style.display = "block";
