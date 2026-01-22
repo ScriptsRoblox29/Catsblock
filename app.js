@@ -401,36 +401,37 @@ function renderMessage(msg, isMe, container) {
 
             
         
-                if (msg.type === 'text') {
+                
+        if (msg.type === 'text') {
         if (msg.text.includes("tenor.com/")) {
-            // Extrai o ID numérico do link (ex: 9455696315481948297)
             const match = msg.text.match(/(\d+)$/);
             const postId = match ? match[1] : "";
 
             if (postId) {
-                // Injeta exatamente a estrutura que você mandou
+                // Criamos um container para controlar o tamanho
+                body.style.width = "100%";
+                body.style.maxWidth = "300px"; // Limite máximo
+                body.style.minWidth = "250px"; // Garante que não fique pequeno
+                body.style.margin = "5px 0";
+
                 body.innerHTML = `
                     <div class="tenor-gif-embed" 
                          data-postid="${postId}" 
                          data-share-method="host" 
                          data-aspect-ratio="1" 
                          data-width="100%">
-                         <a href="${msg.text}">GIF do Tenor</a>
                     </div>
                 `;
 
-                // Adiciona o script do Tenor se ele ainda não estiver na página
+                // Injeta o script se não existir
                 if (!document.querySelector('script[src*="tenor.com/embed.js"]')) {
                     const script = document.createElement('script');
-                    script.type = 'text/javascript';
                     script.src = "https://tenor.com/embed.js";
                     script.async = true;
                     document.body.appendChild(script);
-                } else {
-                    // Força o script a renderizar o novo GIF que acabou de chegar
-                    if (window.Tenor) {
-                        window.Tenor.CheckPostElements();
-                    }
+                } else if (window.Tenor) {
+                    // Força a renderização
+                    setTimeout(() => { window.Tenor.CheckPostElements(); }, 100);
                 }
             } else {
                 body.textContent = msg.text;
@@ -438,7 +439,7 @@ function renderMessage(msg, isMe, container) {
         } else {
             body.textContent = msg.text;
         }
-                }
+        }
     
     
     
