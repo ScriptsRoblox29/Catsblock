@@ -28,7 +28,15 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
-body { background: var(--bg-color); color: var(--text-color); font-family: var(--font-family); height: 100vh; overflow: hidden; }
+body { 
+    background: var(--bg-color); 
+    color: var(--text-color); 
+    font-family: var(--font-family); 
+    height: 100vh; 
+    overflow: hidden; 
+    display: flex; 
+    justify-content: center; 
+}
 
 /* SVG Icons inherit color */
 svg { display: block; }
