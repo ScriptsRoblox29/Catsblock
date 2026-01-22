@@ -402,20 +402,19 @@ function renderMessage(msg, isMe, container) {
             
         
                 
-            if (msg.type === 'text') {
+            
+        if (msg.type === 'text') {
         if (msg.text.includes("tenor.com/")) {
             const match = msg.text.match(/(\d+)$/);
             const postId = match ? match[1] : "";
 
             if (postId) {
-                // Definindo um tamanho mediano fixo para o container
-                // Isso força o embed do Tenor a ocupar esse espaço
+                // 1. Forçamos a bolha a ser um bloco que respeita o tamanho da mensagem pai
                 body.style.display = "block";
-body.style.minWidth = "150px"; // Não deixa ficar menor que 250px
-body.style.width = "400px";    // Tamanho mediano que você quer
-body.style.maxWidth = "90vw";  // Se a tela for pequena (celular), ele diminui
-body.style.minHeight = "200px"; 
-                
+                body.style.width = "100%"; 
+                body.style.minWidth = "150px"; // Mínimo para o GIF não virar uma formiga
+                body.style.maxWidth = "100%";  // NUNCA passa do tamanho da mensagem
+                body.style.padding = "0";      // Remove espaços extras
 
                 body.innerHTML = `
                     <div class="tenor-gif-embed" 
@@ -423,25 +422,23 @@ body.style.minHeight = "200px";
                          data-share-method="host" 
                          data-aspect-ratio="1" 
                          data-width="100%">
+                         <a href="${msg.text}">GIF</a>
                     </div>
                 `;
 
+                // 2. Script e renderização
                 if (!document.querySelector('script[src*="tenor.com/embed.js"]')) {
                     const script = document.createElement('script');
                     script.src = "https://tenor.com/embed.js";
                     script.async = true;
                     document.body.appendChild(script);
-                } else {
-                    // O segredo para chats dinâmicos é chamar isso repetidamente
-                    // pois o embed do Tenor é instável durante a inserção no DOM
-                    let attempts = 0;
-                    const interval = setInterval(() => {
-                        if (window.Tenor) {
-                            window.Tenor.CheckPostElements();
-                            attempts++;
-                        }
-                        if (attempts > 5) clearInterval(interval);
-                    }, 200);
+                } else if (window.Tenor) {
+                    // Tenta renderizar algumas vezes para garantir que o script pegue o tamanho certo
+                    let i = 0;
+                    const itv = setInterval(() => {
+                        window.Tenor.CheckPostElements();
+                        if (i++ > 3) clearInterval(itv);
+                    }, 150);
                 }
             } else {
                 body.textContent = msg.text;
@@ -449,7 +446,7 @@ body.style.minHeight = "200px";
         } else {
             body.textContent = msg.text;
         }
-            }
+        }
     
     
     
