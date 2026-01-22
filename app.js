@@ -399,15 +399,32 @@ function renderMessage(msg, isMe, container) {
     const body = document.createElement('div');
     body.className = 'msg-body';
 
-    if (msg.type === 'text') {
-        body.textContent = msg.text; 
-    } else if (msg.type === 'image') {
-        body.innerHTML = `<img src="${msg.url}" class="msg-media" style="max-width:100%;border-radius:10px">`;
-    } else if (msg.type === 'video') {
-        body.innerHTML = `<video src="${msg.url}" controls class="msg-media" style="max-width:100%;border-radius:10px"></video>`;
-    } else if (msg.type === 'audio') {
-        body.innerHTML = `<audio src="${msg.url}" controls class="msg-audio-player"></audio>`;
-    }
+        if (msg.type === 'text') {
+        // Se for um link do Tenor, a gente "engana" o navegador para exibir o GIF direto
+        if (msg.text.includes("tenor.com/view/")) {
+            const img = document.createElement('img');
+            
+            // O truque: Adicionar ".gif" no final do link faz o Tenor entregar a imagem pura
+            img.src = msg.text + ".gif"; 
+            
+            img.className = 'msg-media';
+            img.style.maxWidth = '100%';
+            img.style.borderRadius = '10px';
+            img.style.display = 'block';
+            
+            // Caso o link dê erro (não seja um GIF válido), ele volta a ser texto
+            img.onerror = () => {
+                img.remove();
+                body.textContent = msg.text;
+            };
+            
+            body.appendChild(img);
+        } else {
+            // Se for texto normal, segue a vida
+            body.textContent = msg.text; 
+        }
+        }
+    
 
     // 1. Primeiro você coloca o corpo na bolha
     div.appendChild(body);
