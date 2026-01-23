@@ -395,63 +395,14 @@ async function enterChat(chatId, otherId, otherUser, dispName) {
                                          
 
 
-// --- SISTEMA DE NOTIFICAÇÕES ---
-
-// 1. Solicita permissão (chamar isso quando o app iniciar ou ao abrir o chat)
-async function requestNotificationPermission() {
-    if ("Notification" in window && Notification.permission === "default") {
-        await Notification.requestPermission();
-    }
-}
-
-// 2. Função que dispara o alerta
-function showLocalNotification(senderName) {
-    // Só envia se tiver permissão E se a aba estiver oculta (usuário fora do site)
-    if (Notification.permission === "granted" && document.visibilityState === "hidden") {
-        const notif = new Notification("You received a message", {
-            body: `The ${senderName} is talking to you, Check!`,
-            icon: "https://cdn-icons-png.flaticon.com/512/733/733585.png" 
-        });
-
-        notif.onclick = () => {
-            window.focus();
-            notif.close();
-        };
-    }
-}
-
-// --- FIM SISTEMA DE NOTIFICAÇÕES ---
-
-
 function loadMessages(chatId) {
-    // Solicita permissão assim que entra na função de carregar mensagens
-    requestNotificationPermission();
-
     const list = document.getElementById('messages-list');
     list.innerHTML = '';
     
-    // Variável de controle para não notificar as 75 mensagens antigas ao abrir o chat
-    let isInitialLoad = true;
-
-    // Paginação: 75 mensagens
+    // Paginação: 15 mensagens
     const q = query(collection(db, "conversations", chatId, "messages"), orderBy("createdAt", "desc"), limit(75));
     
     const unsub = onSnapshot(q, (snap) => {
-        // --- LÓGICA DE NOTIFICAÇÃO ---
-        // Verifica as mudanças para enviar notificação apenas para itens ADICIONADOS agora
-        if (!isInitialLoad) {
-            snap.docChanges().forEach((change) => {
-                if (change.type === "added") {
-                    const data = change.doc.data();
-                    // Se a mensagem não for minha, tenta notificar
-                    if (auth.currentUser.uid !== data.senderId) {
-                        showLocalNotification(data.senderName || "User");
-                    }
-                }
-            });
-        }
-        // -----------------------------
-
         // Inverte pois recebemos do mais novo pro mais velho, mas chat é de baixo pra cima
         const docs = snap.docs.reverse();
         
@@ -460,20 +411,25 @@ function loadMessages(chatId) {
         
         // Rolar para baixo ao carregar
         list.scrollTop = list.scrollHeight;
-        
-        // Após o primeiro carregamento, libera as notificações para próximas mensagens
-        isInitialLoad = false;
     });
-    
     activeUnsubscribes.push(unsub);
     
-    // Rolagem para cima carrega mais
+    // Rolagem para cima carrega mais (Lógica simplificada: user rola e o sistema deveria buscar startAfter)
     list.onscroll = () => {
         if(list.scrollTop === 0) {
+            // Aqui entraria a lógica de 'startAfter' do Firebase usando o último doc carregado
             // console.log("Carregar mais mensagens...");
         }
     };
 }
+
+function renderMessage(msg, isMe, container) {
+    const div = document.createElement('div');
+    div.className = `message-bubble ${isMe ? 'msg-me' : 'msg-other'}`;
+    
+    const body = document.createElement('div');
+    body.className = 'msg-body';
+    
 
 
 
