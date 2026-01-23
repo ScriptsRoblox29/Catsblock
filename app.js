@@ -419,52 +419,33 @@ async function enterChat(chatId, otherId, otherUser, dispName) {
                                          
 
 
-let messagesUnsubscribe = null;
-
-async function loadMessages(chatId) {
+function loadMessages(chatId) {
     const list = document.getElementById('messages-list');
-    if (!list) return;
-
-    // Limpa a lista e remove o ouvinte anterior para não duplicar
     list.innerHTML = '';
-    if (messagesUnsubscribe) messagesUnsubscribe();
-
-    // Busca as mensagens em tempo real (Limitado a 20 para ser leve)
-    const q = query(
-        collection(db, "conversations", chatId, "messages"),
-        orderBy("createdAt", "desc"),
-        limit(20)
-    );
-
-    messagesUnsubscribe = onSnapshot(q, (snap) => {
-        // Guarda a lista limpa para reconstruir
+    
+    // Paginação: 15 mensagens
+    const q = query(collection(db, "conversations", chatId, "messages"), orderBy("createdAt", "desc"), limit(15));
+    
+    const unsub = onSnapshot(q, (snap) => {
+        // Inverte pois recebemos do mais novo pro mais velho, mas chat é de baixo pra cima
+        const docs = snap.docs.reverse();
+        
         list.innerHTML = '';
-
-        // Inverte a ordem: o Firebase traz as novas primeiro, o reverse coloca no fim
-        const docs = [...snap.docs].reverse();
-
-        docs.forEach(d => {
-            const m = d.data();
-            const isMe = m.senderId === auth.currentUser.uid;
-            
-            const div = document.createElement('div');
-            div.className = `message ${isMe ? 'me' : 'them'}`;
-            div.innerHTML = `<div class="message-content">${m.text}</div>`;
-            list.appendChild(div);
-        });
-
-        // Rola para o final da conversa
+        docs.forEach(d => renderMessage(d.data(), auth.currentUser.uid === d.data().senderId, list));
+        
+        // Rolar para baixo ao carregar
         list.scrollTop = list.scrollHeight;
     });
+    activeUnsubscribes.push(unsub);
+    
+    // Rolagem para cima carrega mais (Lógica simplificada: user rola e o sistema deveria buscar startAfter)
+    list.onscroll = () => {
+        if(list.scrollTop === 0) {
+            // Aqui entraria a lógica de 'startAfter' do Firebase usando o último doc carregado
+            // console.log("Carregar mais mensagens...");
+        }
+    };
 }
-
-// O evento de scroll que você queria manter (básico)
-document.getElementById('messages-list').onscroll = function() {
-    if (this.scrollTop === 0) {
-        // Aqui você pode decidir se chama mais ou deixa assim
-        console.log("Chegou no topo");
-    }
-};
 
 
 
