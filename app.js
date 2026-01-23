@@ -18,31 +18,31 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-// Solicitar permissão de notificação
+// --- SISTEMA DE NOTIFICAÇÕES ---
+
+// 1. Solicita permissão ao carregar/logar
 async function requestNotificationPermission() {
-    if ("Notification" in window) {
-        const permission = await Notification.requestPermission();
-        if (permission === "granted") {
-            console.log("Notificações permitidas.");
-        }
+    if ("Notification" in window && Notification.permission === "default") {
+        await Notification.requestPermission();
     }
 }
-// Chamar ao carregar
-requestNotificationPermission();
 
-// Função para mostrar notificação
+// 2. Função que dispara o alerta (Apenas se a aba não estiver visível)
 function showLocalNotification(senderName) {
-    if (Notification.permission === "granted") {
-        const notif = new Notification("There is a message", {
-            body: `${senderName} sent you a message. Check it out!`,
-            icon: "https://www.gstatic.com/images/branding/product/1x/avatar_square_grey_512dp.png" // Use seu ícone aqui
+    if (Notification.permission === "granted" && document.visibilityState === "hidden") {
+        const notif = new Notification("New message", {
+            body: `${senderName} sent you a message.`,
+            icon: "https://cdn-icons-png.flaticon.com/512/733/733585.png" 
         });
+
         notif.onclick = () => {
             window.focus();
             notif.close();
         };
     }
 }
+
+
 
 
 // --- ESTADO GLOBAL ---
