@@ -294,39 +294,34 @@ document.getElementById('btn-start-chat').onclick = async () => {
     }
 };
 
-
 // --- DENTRO DA CONVERSA ---
 async function enterChat(chatId, otherId, otherUser, dispName) {
     currentChatId = chatId;
     Router.go('conversation-frame');
     
-    // Status de Bloqueio
-    let isBlocked = (currentUserData.blockedUsers && currentUserData.blockedUsers.includes(otherId)) || 
-                    (otherUser.blockedUsers && otherUser.blockedUsers.includes(auth.currentUser.uid));
+    // Status de Bloqueio (Quem bloqueou quem)
+    let iBlockedHim = currentUserData.blockedUsers && currentUserData.blockedUsers.includes(otherId);
+    let heBlockedMe = otherUser.blockedUsers && otherUser.blockedUsers.includes(auth.currentUser.uid);
 
     const hImg = document.getElementById('chat-header-img');
     const hName = document.getElementById('chat-header-name');
     const hStatus = document.getElementById('chat-header-status');
     
-    if(isBlocked) {
+    // Se ELE me bloqueou, tratamos como "Account not found"
+    // Se EU bloqueei, ainda vejo os dados dele para poder abrir o perfil e desbloquear
+    if(heBlockedMe) {
         hImg.src = 'https://www.gstatic.com/images/branding/product/1x/avatar_square_grey_512dp.png';
         hName.innerText = "Account not found";
         hStatus.innerText = "Offline";
     } else {
         hImg.src = otherUser.photoURL;
         hName.innerText = dispName;
-        // Lógica de Visto por último corrigida
-        if (otherUser.lastSeenPrivacy === 'nobody') {
-            hStatus.innerText = "Offline";
-        } else {
-            // Se tivesse sistema realtime online: mostrar aqui. Como pedido no prompt: Offline.
-            hStatus.innerText = "Offline"; 
-        }
+        hStatus.innerText = "Offline"; 
     }
 
-    // Clique no perfil do cabeçalho
+    // Clique no perfil do cabeçalho (Abre modal de perfil)
     document.getElementById('chat-header-clickable').onclick = () => {
-        if(isBlocked) return; // Não abre perfil se bloqueado (Account not found)
+        if(heBlockedMe) return; // Não abre perfil se ele te bloqueou
         
         const m = document.getElementById('profile-details-modal');
         m.classList.remove('hidden');
@@ -335,34 +330,61 @@ async function enterChat(chatId, otherId, otherUser, dispName) {
         document.getElementById('profile-modal-id').innerText = `ID: ${otherUser.accountId}`;
         document.getElementById('profile-modal-desc').innerText = otherUser.description || "No description.";
         
-        // Esconde edição, mostra ações de bloquear/denunciar
         document.getElementById('profile-edit-container').classList.add('hidden');
         document.getElementById('profile-modal-desc').classList.remove('hidden');
         document.getElementById('profile-actions-others').classList.remove('hidden');
 
-        // Botão Bloquear
-        document.getElementById('btn-block-user').onclick = () => {
-             document.getElementById('block-confirm-modal').classList.remove('hidden');
-             document.getElementById('btn-confirm-block').onclick = async () => {
-                 const newBlocked = [...(currentUserData.blockedUsers || []), otherId];
-                 await updateDoc(doc(db, "users", auth.currentUser.uid), { blockedUsers: newBlocked });
-                 currentUserData.blockedUsers = newBlocked;
-                 
-                 document.getElementById('block-confirm-modal').classList.add('hidden');
-                 document.getElementById('profile-details-modal').classList.add('hidden');
-                 Router.go('main-frame');
-                 Toast.show("User blocked", "success");
-             };
+        const blockBtn = document.getElementById('btn-block-user');
+
+        // --- LÓGICA DO BOTÃO BLOQUEAR / DESBLOQUEAR ---
+        if (currentUserData.blockedUsers && currentUserData.blockedUsers.includes(otherId)) {
+            // Caso 1: Usuário já está bloqueado por mim
+            blockBtn.innerText = "Unblock this person";
+            blockBtn.style.background = "#666"; // Cor cinza (neutra)
+            
+            blockBtn.onclick = async () => {
+                // Desbloqueio Silencioso (Sem confirmação/aviso)
+                const newBlocked = currentUserData.blockedUsers.filter(id => id !== otherId);
+                await updateDoc(doc(db, "users", auth.currentUser.uid), { blockedUsers: newBlocked });
+                currentUserData.blockedUsers = newBlocked;
+                
+                document.getElementById('profile-details-modal').classList.add('hidden');
+                Toast.show("User unblocked");
+                loadConversations(); // Recarrega a lista para refletir a mudança
+            };
+        } else {
+            // Caso 2: Usuário NÃO está bloqueado por mim
+            blockBtn.innerText = "Block user";
+            blockBtn.style.background = "var(--error-color)";
+            
+            blockBtn.onclick = () => {
+                 // Bloqueio ainda pede confirmação
+                 document.getElementById('block-confirm-modal').classList.remove('hidden');
+                 document.getElementById('btn-confirm-block').onclick = async () => {
+                     const newBlocked = [...(currentUserData.blockedUsers || []), otherId];
+                     await updateDoc(doc(db, "users", auth.currentUser.uid), { blockedUsers: newBlocked });
+                     currentUserData.blockedUsers = newBlocked;
+                     
+                     document.getElementById('block-confirm-modal').classList.add('hidden');
+                     document.getElementById('profile-details-modal').classList.add('hidden');
+                     Router.go('main-frame'); // Volta para a lista após bloquear
+                     Toast.show("User blocked", "success");
+                 };
+            };
+        }
+
+        // --- BOTÃO DENUNCIAR (REPORT) ---
+        document.getElementById('btn-report-user').onclick = () => {
+            document.getElementById('report-modal').classList.remove('hidden');
         };
-        // Botão Denunciar
-        document.getElementById('btn-report-user').onclick = () => document.getElementById('report-modal').classList.remove('hidden');
     };
 
     document.getElementById('btn-close-chat').onclick = () => Router.go('main-frame');
 
-    // Carregar Mensagens
+    // Carregar Mensagens da conversa
     loadMessages(chatId);
-}
+                 }
+
 
 function loadMessages(chatId) {
     const list = document.getElementById('messages-list');
