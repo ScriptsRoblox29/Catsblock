@@ -424,7 +424,7 @@ function loadMessages(chatId) {
     list.innerHTML = '';
     
     // Paginação: 15 mensagens
-    const q = query(collection(db, "conversations", chatId, "messages"), orderBy("createdAt", "desc"), limit(15));
+    const q = query(collection(db, "conversations", chatId, "messages"), orderBy("createdAt", "desc"), limit(75));
     
     const unsub = onSnapshot(q, (snap) => {
         // Inverte pois recebemos do mais novo pro mais velho, mas chat é de baixo pra cima
