@@ -419,30 +419,76 @@ async function enterChat(chatId, otherId, otherUser, dispName) {
                                          
 
 
-function loadMessages(chatId) {
+let lastVisibleMsg = null;
+
+async function loadMessages(chatId, loadMore = false) {
     const list = document.getElementById('messages-list');
-    list.innerHTML = '';
     
-    // Paginação: 15 mensagens
-    const q = query(collection(db, "conversations", chatId, "messages"), orderBy("createdAt", "desc"), limit(75));
-    
-    const unsub = onSnapshot(q, (snap) => {
-        // Inverte pois recebemos do mais novo pro mais velho, mas chat é de baixo pra cima
-        const docs = snap.docs.reverse();
-        
+    // Só limpa se for a primeira carga do chat
+    if (!loadMore) {
         list.innerHTML = '';
-        docs.forEach(d => renderMessage(d.data(), auth.currentUser.uid === d.data().senderId, list));
+        lastVisibleMsg = null;
+    }
+
+    let q = query(
+        collection(db, "conversations", chatId, "messages"), 
+        orderBy("createdAt", "desc"), 
+        limit(75)
+    );
+
+    if (loadMore && lastVisibleMsg) {
+        q = query(
+            collection(db, "conversations", chatId, "messages"), 
+            orderBy("createdAt", "desc"), 
+            startAfter(lastVisibleMsg), 
+            limit(75)
+        );
+    }
+
+    const unsub = onSnapshot(q, (snap) => {
+        // --- GATILHO PARA NOTIFICAÇÃO ---
+        snap.docChanges().forEach(change => {
+            if (change.type === "added") {
+                const data = change.doc.data();
+                // Verifica se a mensagem é nova (últimos 10 segundos) e não é do usuário atual
+                const isRecent = data.createdAt?.toMillis() > (Date.now() - 10000);
+                const isNotMe = data.senderId !== auth.currentUser.uid;
+
+                if (isRecent && isNotMe) {
+                    showLocalNotification(data.senderName || "Usuário");
+                }
+            }
+        });
+
+        // Atualiza o ponteiro da paginação
+        if (!snap.empty && !loadMore) {
+            lastVisibleMsg = snap.docs[snap.docs.length - 1];
+        }
+
+        const docs = [...snap.docs].reverse();
         
-        // Rolar para baixo ao carregar
-        list.scrollTop = list.scrollHeight;
+        // Se não for loadMore, limpa para atualizar a lista em tempo real
+        if (!loadMore) list.innerHTML = ''; 
+        
+        docs.forEach(d => {
+            const data = d.data();
+            const isMe = auth.currentUser.uid === data.senderId;
+            
+            // Se for loadMore, usamos prepend para as antigas aparecerem no topo
+            renderMessage(data, isMe, list, loadMore); 
+        });
+
+        // Só rola para baixo se for a carga inicial (mensagens novas)
+        if (!loadMore) {
+            list.scrollTop = list.scrollHeight;
+        }
     });
+
     activeUnsubscribes.push(unsub);
-    
-    // Rolagem para cima carrega mais (Lógica simplificada: user rola e o sistema deveria buscar startAfter)
+
     list.onscroll = () => {
-        if(list.scrollTop === 0) {
-            // Aqui entraria a lógica de 'startAfter' do Firebase usando o último doc carregado
-            // console.log("Carregar mais mensagens...");
+        if (list.scrollTop === 0) {
+            loadMessages(chatId, true);
         }
     };
 }
