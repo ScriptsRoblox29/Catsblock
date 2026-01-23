@@ -307,8 +307,6 @@ async function enterChat(chatId, otherId, otherUser, dispName) {
     const hName = document.getElementById('chat-header-name');
     const hStatus = document.getElementById('chat-header-status');
     
-    // Se ELE me bloqueou, tratamos como "Account not found"
-    // Se EU bloqueei, ainda vejo os dados dele para poder abrir o perfil e desbloquear
     if(heBlockedMe) {
         hImg.src = 'https://www.gstatic.com/images/branding/product/1x/avatar_square_grey_512dp.png';
         hName.innerText = "Account not found";
@@ -319,9 +317,8 @@ async function enterChat(chatId, otherId, otherUser, dispName) {
         hStatus.innerText = "Offline"; 
     }
 
-    // Clique no perfil do cabeçalho (Abre modal de perfil)
     document.getElementById('chat-header-clickable').onclick = () => {
-        if(heBlockedMe) return; // Não abre perfil se ele te bloqueou
+        if(heBlockedMe) return; 
         
         const m = document.getElementById('profile-details-modal');
         m.classList.remove('hidden');
@@ -336,29 +333,29 @@ async function enterChat(chatId, otherId, otherUser, dispName) {
 
         const blockBtn = document.getElementById('btn-block-user');
 
+        // REMOVE CORES ESTRANHAS E USA SUA CLASSE DO CSS
+        blockBtn.style.background = ""; 
+        blockBtn.className = "btn btn-red-outline"; 
+
         // --- LÓGICA DO BOTÃO BLOQUEAR / DESBLOQUEAR ---
         if (currentUserData.blockedUsers && currentUserData.blockedUsers.includes(otherId)) {
-            // Caso 1: Usuário já está bloqueado por mim
+            // Caso: Já bloqueado -> Desbloquear (SILENCIOSO)
             blockBtn.innerText = "Unblock this person";
-            blockBtn.style.background = "#666"; // Cor cinza (neutra)
             
             blockBtn.onclick = async () => {
-                // Desbloqueio Silencioso (Sem confirmação/aviso)
                 const newBlocked = currentUserData.blockedUsers.filter(id => id !== otherId);
                 await updateDoc(doc(db, "users", auth.currentUser.uid), { blockedUsers: newBlocked });
                 currentUserData.blockedUsers = newBlocked;
                 
                 document.getElementById('profile-details-modal').classList.add('hidden');
                 Toast.show("User unblocked");
-                loadConversations(); // Recarrega a lista para refletir a mudança
+                loadConversations(); 
             };
         } else {
-            // Caso 2: Usuário NÃO está bloqueado por mim
+            // Caso: Não bloqueado -> Bloquear (COM CONFIRMAÇÃO)
             blockBtn.innerText = "Block user";
-            blockBtn.style.background = "var(--error-color)";
             
             blockBtn.onclick = () => {
-                 // Bloqueio ainda pede confirmação
                  document.getElementById('block-confirm-modal').classList.remove('hidden');
                  document.getElementById('btn-confirm-block').onclick = async () => {
                      const newBlocked = [...(currentUserData.blockedUsers || []), otherId];
@@ -367,7 +364,7 @@ async function enterChat(chatId, otherId, otherUser, dispName) {
                      
                      document.getElementById('block-confirm-modal').classList.add('hidden');
                      document.getElementById('profile-details-modal').classList.add('hidden');
-                     Router.go('main-frame'); // Volta para a lista após bloquear
+                     Router.go('main-frame'); 
                      Toast.show("User blocked", "success");
                  };
             };
@@ -380,10 +377,9 @@ async function enterChat(chatId, otherId, otherUser, dispName) {
     };
 
     document.getElementById('btn-close-chat').onclick = () => Router.go('main-frame');
-
-    // Carregar Mensagens da conversa
     loadMessages(chatId);
-                 }
+                                                                       }
+                                         
 
 
 function loadMessages(chatId) {
