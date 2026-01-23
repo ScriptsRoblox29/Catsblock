@@ -210,7 +210,12 @@ function loadConversations() {
 
         for(const d of snap.docs) {
             const data = d.data();
-            const otherId = data.participants.find(id => id !== auth.currentUser.uid);
+
+// Nova linha de segurança (o filtro do adesivo invisível)
+if (data.deletedFor && data.deletedFor.includes(auth.currentUser.uid)) return;
+
+const otherId = data.participants.find(id => id !== auth.currentUser.uid);
+            
             
             // Verifica se EU bloqueei
             let isBlockedByMe = currentUserData.blockedUsers && currentUserData.blockedUsers.includes(otherId);
