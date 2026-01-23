@@ -419,118 +419,52 @@ async function enterChat(chatId, otherId, otherUser, dispName) {
                                          
 
 
-// --- ESTADO DE MENSAGENS (Coloque no topo do arquivo) ---
-let lastMessageVisible = null;
 let messagesUnsubscribe = null;
-let isFetching = false;
 
-// 1. Função de Desenhar (Simplificada)
-function renderMessage(data, isMe, container, loadMore) {
-    if (!container) return;
-    const div = document.createElement('div');
-    div.className = `message ${isMe ? 'me' : 'them'}`;
-    
-    // Fallback caso o texto ou data falhem
-    const text = data.text || "";
-    const time = data.createdAt ? new Date(data.createdAt.toMillis()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "...";
-
-    div.innerHTML = `<div class="message-content"><p>${text}</p><span>${time}</span></div>`;
-
-    if (loadMore) container.prepend(div);
-    else container.appendChild(div);
-}
-
-// 2. Carregar Mensagens (Com verificação de segurança)
-async function loadMessages(chatId, loadMore = false) {
+async function loadMessages(chatId) {
     const list = document.getElementById('messages-list');
-    if (!list || !chatId) return;
+    if (!list) return;
 
-    if (isFetching && loadMore) return; // Evita carregar 2x
-    isFetching = true;
+    // Limpa a lista e remove o ouvinte anterior para não duplicar
+    list.innerHTML = '';
+    if (messagesUnsubscribe) messagesUnsubscribe();
 
-    try {
-        if (!loadMore) {
-            list.innerHTML = '<div>...</div>';
-            lastMessageVisible = null;
-            if (messagesUnsubscribe) messagesUnsubscribe();
-        }
-
-        let q = query(
-            collection(db, "conversations", chatId, "messages"),
-            orderBy("createdAt", "desc"),
-            limit(15)
-        );
-
-        if (loadMore && lastMessageVisible) {
-            q = query(
-                collection(db, "conversations", chatId, "messages"),
-                orderBy("createdAt", "desc"),
-                startAfter(lastMessageVisible),
-                limit(15)
-            );
-        }
-
-        const snap = await getDocs(q);
-        
-        if (!loadMore) list.innerHTML = '';
-
-        if (!snap.empty) {
-            lastMessageVisible = snap.docs[snap.docs.length - 1];
-            const docs = [...snap.docs].reverse();
-            docs.forEach(d => {
-                const data = d.data();
-                renderMessage(data, auth.currentUser.uid === data.senderId, list, loadMore);
-            });
-
-            if (!loadMore) {
-                list.scrollTop = list.scrollHeight;
-                listenForNewMessages(chatId);
-            }
-        }
-    } catch (e) {
-        console.error("serious mistake:", e);
-    } finally {
-        isFetching = false;
-    }
-}
-
-// 3. Ouvir novas (Sempre depois do histórico)
-function listenForNewMessages(chatId) {
-    const list = document.getElementById('messages-list');
+    // Busca as mensagens em tempo real (Limitado a 20 para ser leve)
     const q = query(
-        collection(db, "conversations", chatId, "messages"), 
-        orderBy("createdAt", "desc"), 
-        limit(1)
+        collection(db, "conversations", chatId, "messages"),
+        orderBy("createdAt", "desc"),
+        limit(20)
     );
 
     messagesUnsubscribe = onSnapshot(q, (snap) => {
-        snap.docChanges().forEach((change) => {
-            if (change.type === "added") {
-                const msgData = change.doc.data();
-                const isMe = msgData.senderId === auth.currentUser.uid;
-                
-                // Só mostra se for nova de verdade (enviada nos últimos 10 segundos)
-                if (msgData.createdAt?.toMillis() > (Date.now() - 10000)) {
-                    renderMessage(msgData, isMe, list, false);
-                    list.scrollTop = list.scrollHeight;
-                    
-                    if (!isMe) {
-                        showLocalNotification(msgData.senderName || "Alguém");
-                    }
-                }
-            }
-        });
-    });
-        }
+        // Guarda a lista limpa para reconstruir
+        list.innerHTML = '';
 
-    document.getElementById('messages-list').addEventListener('scroll', async (e) => {
-    const el = e.target;
-    if (el.scrollTop < 10 && !isFetching && lastMessageVisible) {
-        const oldHeight = el.scrollHeight;
-        await loadMessages(currentChatId, true);
-        el.scrollTop = el.scrollHeight - oldHeight;
+        // Inverte a ordem: o Firebase traz as novas primeiro, o reverse coloca no fim
+        const docs = [...snap.docs].reverse();
+
+        docs.forEach(d => {
+            const m = d.data();
+            const isMe = m.senderId === auth.currentUser.uid;
+            
+            const div = document.createElement('div');
+            div.className = `message ${isMe ? 'me' : 'them'}`;
+            div.innerHTML = `<div class="message-content">${m.text}</div>`;
+            list.appendChild(div);
+        });
+
+        // Rola para o final da conversa
+        list.scrollTop = list.scrollHeight;
+    });
+}
+
+// O evento de scroll que você queria manter (básico)
+document.getElementById('messages-list').onscroll = function() {
+    if (this.scrollTop === 0) {
+        // Aqui você pode decidir se chama mais ou deixa assim
+        console.log("Chegou no topo");
     }
-});
+};
 
 
 
