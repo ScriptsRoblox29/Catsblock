@@ -418,20 +418,42 @@ async function enterChat(chatId, otherId, otherUser, dispName) {
                                                                        }
                                          
 
+
 let lastMessageVisible = null;
 let messagesUnsubscribe = null;
-let isFetching = false; // Trava para não carregar 2x ao mesmo tempo
+let isFetching = false;
 
+// 1. Função que DESENHA a mensagem na tela
+function renderMessage(data, isMe, container, loadMore) {
+    const div = document.createElement('div');
+    div.className = `message ${isMe ? 'me' : 'them'}`;
+    
+    const text = data.text || "";
+    const time = data.createdAt ? new Date(data.createdAt.toMillis()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "...";
+
+    div.innerHTML = `
+        <div class="message-content">
+            <p>${text}</p>
+            <span class="time">${time}</span>
+        </div>
+    `;
+
+    if (loadMore) {
+        container.prepend(div); // Se carregar antiga, coloca no TOPO
+    } else {
+        container.appendChild(div); // Se for nova, coloca no FINAL
+    }
+}
+
+// 2. Função que CARREGA o histórico (as 15 mensagens)
 async function loadMessages(chatId, loadMore = false) {
     const list = document.getElementById('messages-list');
-    
     if (!loadMore) {
-        list.innerHTML = '';
+        list.innerHTML = ''; 
         lastMessageVisible = null;
-        if (messagesUnsubscribe) messagesUnsubscribe(); // Limpa escuta anterior
+        if (messagesUnsubscribe) messagesUnsubscribe(); // Para de ouvir o chat anterior
     }
 
-    // Query para buscar o histórico
     let q = query(
         collection(db, "conversations", chatId, "messages"),
         orderBy("createdAt", "desc"),
@@ -450,10 +472,10 @@ async function loadMessages(chatId, loadMore = false) {
     const snap = await getDocs(q);
     if (snap.empty) return;
 
-    // Guarda a última mensagem para o próximo scroll
+    // Guarda a última do pacote para o próximo "carregar mais"
     lastMessageVisible = snap.docs[snap.docs.length - 1];
 
-    // Inverte os documentos para renderizar na ordem certa
+    // INVERTE para as 15 aparecerem na ordem de leitura (A, B, C...)
     const docs = [...snap.docs].reverse();
     
     docs.forEach(d => {
@@ -461,14 +483,15 @@ async function loadMessages(chatId, loadMore = false) {
     });
 
     if (!loadMore) {
-        list.scrollTop = list.scrollHeight; // Vai para o final no primeiro carregamento
-        listenForNewMessages(chatId); // Ativa o escutador de mensagens novas
+        list.scrollTop = list.scrollHeight; // Desce pro final no começo
+        listenForNewMessages(chatId); // Liga o "ouvidor" de mensagens novas
     }
 }
 
-// Escutador apenas para mensagens que chegarem AGORA
+// 3. Função que ESCUTA mensagens novas (tempo real)
 function listenForNewMessages(chatId) {
     const list = document.getElementById('messages-list');
+    // Só observa o que for criado AGORA
     const q = query(
         collection(db, "conversations", chatId, "messages"),
         orderBy("createdAt", "desc"),
@@ -479,15 +502,16 @@ function listenForNewMessages(chatId) {
         snap.docChanges().forEach((change) => {
             if (change.type === "added") {
                 const msgData = change.doc.data();
-                // Só renderiza se a mensagem for realmente nova (enviada nos últimos 10s)
-                const isRecent = msgData.createdAt?.toMillis() > (Date.now() - 10000);
                 
-                if (isRecent) {
+                // Só mostra se for enviada nos últimos 5 segundos (evita carregar lixo antigo)
+                const isVeryRecent = msgData.createdAt?.toMillis() > (Date.now() - 5000);
+                
+                if (isVeryRecent) {
                     renderMessage(msgData, auth.currentUser.uid === msgData.senderId, list, false);
                     list.scrollTop = list.scrollHeight;
 
                     if (msgData.senderId !== auth.currentUser.uid) {
-                        showLocalNotification("New Message");
+                        showLocalNotification("New message");
                     }
                 }
             }
@@ -495,20 +519,21 @@ function listenForNewMessages(chatId) {
     });
 }
 
-// Evento de scroll corrigido
+// 4. O EVENTO DE SCROLL (Carregar mais ao ir no topo)
 document.getElementById('messages-list').onscroll = async function() {
+    // Se chegou no topo (0) e não está carregando nada agora
     if (this.scrollTop === 0 && !isFetching && lastMessageVisible) {
         isFetching = true;
-        const previousHeight = this.scrollHeight;
-        
+        const alturaAntiga = this.scrollHeight;
+
         await loadMessages(currentChatId, true);
-        
-        // Mantém o scroll no lugar certo após carregar as antigas
-        this.scrollTop = this.scrollHeight - previousHeight;
+
+        // ESSA LINHA impede o chat de dar o "pulo" e te perder
+        this.scrollTop = this.scrollHeight - alturaAntiga;
         isFetching = false;
     }
 };
-
+    
 
 
 
