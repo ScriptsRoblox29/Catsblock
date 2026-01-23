@@ -419,10 +419,19 @@ async function enterChat(chatId, otherId, otherUser, dispName) {
                                          
 
 let lastMessageVisible = null;
+let messagesUnsubscribe = null;
+let isFetching = false; // Trava para não carregar 2x ao mesmo tempo
 
-function loadMessages(chatId, loadMore = false) {
+async function loadMessages(chatId, loadMore = false) {
     const list = document.getElementById('messages-list');
     
+    if (!loadMore) {
+        list.innerHTML = '';
+        lastMessageVisible = null;
+        if (messagesUnsubscribe) messagesUnsubscribe(); // Limpa escuta anterior
+    }
+
+    // Query para buscar o histórico
     let q = query(
         collection(db, "conversations", chatId, "messages"),
         orderBy("createdAt", "desc"),
@@ -438,32 +447,68 @@ function loadMessages(chatId, loadMore = false) {
         );
     }
 
-    onSnapshot(q, (snap) => {
-        if (snap.empty) return;
-        if (!loadMore) list.innerHTML = '';
-        
-        lastMessageVisible = snap.docs[snap.docs.length - 1];
-        
-        const docs = [...snap.docs].reverse();
-        docs.forEach(d => {
-            const msgData = d.data();
-            renderMessage(msgData, auth.currentUser.uid === msgData.senderId, list, loadMore);
-            
-            // Lógica de Notificação: Se a mensagem é nova e não foi enviada por mim
-            if (!isMe && !loadMore && msgData.createdAt?.toMillis() > (Date.now() - 5000)) {
-                // Aqui você precisaria buscar o nome do remetente
-                showLocalNotification("Someone"); 
+    const snap = await getDocs(q);
+    if (snap.empty) return;
+
+    // Guarda a última mensagem para o próximo scroll
+    lastMessageVisible = snap.docs[snap.docs.length - 1];
+
+    // Inverte os documentos para renderizar na ordem certa
+    const docs = [...snap.docs].reverse();
+    
+    docs.forEach(d => {
+        renderMessage(d.data(), auth.currentUser.uid === d.data().senderId, list, loadMore);
+    });
+
+    if (!loadMore) {
+        list.scrollTop = list.scrollHeight; // Vai para o final no primeiro carregamento
+        listenForNewMessages(chatId); // Ativa o escutador de mensagens novas
+    }
+}
+
+// Escutador apenas para mensagens que chegarem AGORA
+function listenForNewMessages(chatId) {
+    const list = document.getElementById('messages-list');
+    const q = query(
+        collection(db, "conversations", chatId, "messages"),
+        orderBy("createdAt", "desc"),
+        limit(1)
+    );
+
+    messagesUnsubscribe = onSnapshot(q, (snap) => {
+        snap.docChanges().forEach((change) => {
+            if (change.type === "added") {
+                const msgData = change.doc.data();
+                // Só renderiza se a mensagem for realmente nova (enviada nos últimos 10s)
+                const isRecent = msgData.createdAt?.toMillis() > (Date.now() - 10000);
+                
+                if (isRecent) {
+                    renderMessage(msgData, auth.currentUser.uid === msgData.senderId, list, false);
+                    list.scrollTop = list.scrollHeight;
+
+                    if (msgData.senderId !== auth.currentUser.uid) {
+                        showLocalNotification("New Message");
+                    }
+                }
             }
         });
     });
 }
 
-// Evento de scroll
-document.getElementById('messages-list').onscroll = function() {
-    if (this.scrollTop === 0) {
-        loadMessages(currentChatId, true);
+// Evento de scroll corrigido
+document.getElementById('messages-list').onscroll = async function() {
+    if (this.scrollTop === 0 && !isFetching && lastMessageVisible) {
+        isFetching = true;
+        const previousHeight = this.scrollHeight;
+        
+        await loadMessages(currentChatId, true);
+        
+        // Mantém o scroll no lugar certo após carregar as antigas
+        this.scrollTop = this.scrollHeight - previousHeight;
+        isFetching = false;
     }
 };
+
 
 
 
