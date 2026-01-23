@@ -331,15 +331,14 @@ async function enterChat(chatId, otherId, otherUser, dispName) {
         document.getElementById('profile-modal-desc').classList.remove('hidden');
         document.getElementById('profile-actions-others').classList.remove('hidden');
 
-        const blockBtn = document.getElementById('btn-block-user');
+                const blockBtn = document.getElementById('btn-block-user');
 
-        // REMOVE CORES ESTRANHAS E USA SUA CLASSE DO CSS
+        // MUDANÇA AQUI: Remove qualquer cor manual e aplica a classe de contorno vermelho
         blockBtn.style.background = ""; 
         blockBtn.className = "btn btn-red-outline"; 
 
-        // --- LÓGICA DO BOTÃO BLOQUEAR / DESBLOQUEAR ---
         if (currentUserData.blockedUsers && currentUserData.blockedUsers.includes(otherId)) {
-            // Caso: Já bloqueado -> Desbloquear (SILENCIOSO)
+            // DESBLOQUEAR
             blockBtn.innerText = "Unblock this person";
             
             blockBtn.onclick = async () => {
@@ -352,9 +351,9 @@ async function enterChat(chatId, otherId, otherUser, dispName) {
                 loadConversations(); 
             };
         } else {
-            // Caso: Não bloqueado -> Bloquear (COM CONFIRMAÇÃO)
+            // BLOQUEAR
             blockBtn.innerText = "Block user";
-            
+
             blockBtn.onclick = () => {
                  document.getElementById('block-confirm-modal').classList.remove('hidden');
                  document.getElementById('btn-confirm-block').onclick = async () => {
@@ -364,11 +363,12 @@ async function enterChat(chatId, otherId, otherUser, dispName) {
                      
                      document.getElementById('block-confirm-modal').classList.add('hidden');
                      document.getElementById('profile-details-modal').classList.add('hidden');
-                     Router.go('main-frame'); 
+                     Router.go('main-frame');
                      Toast.show("User blocked", "success");
                  };
             };
         }
+        
 
         // --- BOTÃO DENUNCIAR (REPORT) ---
         document.getElementById('btn-report-user').onclick = () => {
