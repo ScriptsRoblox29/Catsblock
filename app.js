@@ -18,6 +18,33 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
+// Solicitar permissão de notificação
+async function requestNotificationPermission() {
+    if ("Notification" in window) {
+        const permission = await Notification.requestPermission();
+        if (permission === "granted") {
+            console.log("Notificações permitidas.");
+        }
+    }
+}
+// Chamar ao carregar
+requestNotificationPermission();
+
+// Função para mostrar notificação
+function showLocalNotification(senderName) {
+    if (Notification.permission === "granted") {
+        const notif = new Notification("There is a message", {
+            body: `${senderName} sent you a message. Check it out!`,
+            icon: "https://www.gstatic.com/images/branding/product/1x/avatar_square_grey_512dp.png" // Use seu ícone aqui
+        });
+        notif.onclick = () => {
+            window.focus();
+            notif.close();
+        };
+    }
+}
+
+
 // --- ESTADO GLOBAL ---
 let currentUserData = null;
 let currentChatId = null;
@@ -238,12 +265,17 @@ function loadConversations() {
 function confirmDeleteChat(chatId) {
     const m = document.getElementById('delete-chat-modal');
     m.classList.remove('hidden');
-    document.getElementById('btn-confirm-delete-chat').onclick = () => {
-        // Como o prompt pede para deletar "Permanentemente", mas Firebase não tem deleteCollection nativo web facil,
-        // vamos simular a remoção visual ou deletar o doc da conversa (mensagens órfãs).
-        // Aqui deletamos o doc da conversa.
-        // deleteDoc(doc(db, "conversations", chatId)); (Comentado para segurança demo, apenas UI)
-        Toast.show("Conversation deleted.");
+    document.getElementById('btn-confirm-delete-chat').onclick = async () => {
+        const chatRef = doc(db, "conversations", chatId);
+        const chatSnap = await getDoc(chatRef);
+        const deletedFor = chatSnap.data().deletedFor || [];
+        
+        if (!deletedFor.includes(auth.currentUser.uid)) {
+            deletedFor.push(auth.currentUser.uid);
+            await updateDoc(chatRef, { deletedFor: deletedFor });
+        }
+        
+        Toast.show("Conversation removed from your list.");
         m.classList.add('hidden');
     };
 }
