@@ -18,30 +18,6 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-// --- SISTEMA DE NOTIFICAÇÕES ---
-
-// 1. Solicita permissão ao carregar/logar
-async function requestNotificationPermission() {
-    if ("Notification" in window && Notification.permission === "default") {
-        await Notification.requestPermission();
-    }
-}
-
-// 2. Função que dispara o alerta (Apenas se a aba não estiver visível)
-function showLocalNotification(senderName) {
-    if (Notification.permission === "granted" && document.visibilityState === "hidden") {
-        const notif = new Notification("New message", {
-            body: `${senderName} sent you a message.`,
-            icon: "https://cdn-icons-png.flaticon.com/512/733/733585.png" 
-        });
-
-        notif.onclick = () => {
-            window.focus();
-            notif.close();
-        };
-    }
-}
-
 
 
 
@@ -419,76 +395,82 @@ async function enterChat(chatId, otherId, otherUser, dispName) {
                                          
 
 
-let lastVisibleMsg = null;
+// --- SISTEMA DE NOTIFICAÇÕES ---
 
-async function loadMessages(chatId, loadMore = false) {
+// 1. Solicita permissão (chamar isso quando o app iniciar ou ao abrir o chat)
+async function requestNotificationPermission() {
+    if ("Notification" in window && Notification.permission === "default") {
+        await Notification.requestPermission();
+    }
+}
+
+// 2. Função que dispara o alerta
+function showLocalNotification(senderName) {
+    // Só envia se tiver permissão E se a aba estiver oculta (usuário fora do site)
+    if (Notification.permission === "granted" && document.visibilityState === "hidden") {
+        const notif = new Notification("You received a message", {
+            body: `The ${senderName} is talking to you, Check!`,
+            icon: "https://cdn-icons-png.flaticon.com/512/733/733585.png" 
+        });
+
+        notif.onclick = () => {
+            window.focus();
+            notif.close();
+        };
+    }
+}
+
+// --- FIM SISTEMA DE NOTIFICAÇÕES ---
+
+
+function loadMessages(chatId) {
+    // Solicita permissão assim que entra na função de carregar mensagens
+    requestNotificationPermission();
+
     const list = document.getElementById('messages-list');
+    list.innerHTML = '';
     
-    // Só limpa se for a primeira carga do chat
-    if (!loadMore) {
-        list.innerHTML = '';
-        lastVisibleMsg = null;
-    }
+    // Variável de controle para não notificar as 75 mensagens antigas ao abrir o chat
+    let isInitialLoad = true;
 
-    let q = query(
-        collection(db, "conversations", chatId, "messages"), 
-        orderBy("createdAt", "desc"), 
-        limit(75)
-    );
-
-    if (loadMore && lastVisibleMsg) {
-        q = query(
-            collection(db, "conversations", chatId, "messages"), 
-            orderBy("createdAt", "desc"), 
-            startAfter(lastVisibleMsg), 
-            limit(75)
-        );
-    }
-
+    // Paginação: 75 mensagens
+    const q = query(collection(db, "conversations", chatId, "messages"), orderBy("createdAt", "desc"), limit(75));
+    
     const unsub = onSnapshot(q, (snap) => {
-        // --- GATILHO PARA NOTIFICAÇÃO ---
-        snap.docChanges().forEach(change => {
-            if (change.type === "added") {
-                const data = change.doc.data();
-                // Verifica se a mensagem é nova (últimos 10 segundos) e não é do usuário atual
-                const isRecent = data.createdAt?.toMillis() > (Date.now() - 10000);
-                const isNotMe = data.senderId !== auth.currentUser.uid;
-
-                if (isRecent && isNotMe) {
-                    showLocalNotification(data.senderName || "Usuário");
+        // --- LÓGICA DE NOTIFICAÇÃO ---
+        // Verifica as mudanças para enviar notificação apenas para itens ADICIONADOS agora
+        if (!isInitialLoad) {
+            snap.docChanges().forEach((change) => {
+                if (change.type === "added") {
+                    const data = change.doc.data();
+                    // Se a mensagem não for minha, tenta notificar
+                    if (auth.currentUser.uid !== data.senderId) {
+                        showLocalNotification(data.senderName || "User");
+                    }
                 }
-            }
-        });
-
-        // Atualiza o ponteiro da paginação
-        if (!snap.empty && !loadMore) {
-            lastVisibleMsg = snap.docs[snap.docs.length - 1];
+            });
         }
+        // -----------------------------
 
-        const docs = [...snap.docs].reverse();
+        // Inverte pois recebemos do mais novo pro mais velho, mas chat é de baixo pra cima
+        const docs = snap.docs.reverse();
         
-        // Se não for loadMore, limpa para atualizar a lista em tempo real
-        if (!loadMore) list.innerHTML = ''; 
+        list.innerHTML = '';
+        docs.forEach(d => renderMessage(d.data(), auth.currentUser.uid === d.data().senderId, list));
         
-        docs.forEach(d => {
-            const data = d.data();
-            const isMe = auth.currentUser.uid === data.senderId;
-            
-            // Se for loadMore, usamos prepend para as antigas aparecerem no topo
-            renderMessage(data, isMe, list, loadMore); 
-        });
-
-        // Só rola para baixo se for a carga inicial (mensagens novas)
-        if (!loadMore) {
-            list.scrollTop = list.scrollHeight;
-        }
+        // Rolar para baixo ao carregar
+        list.scrollTop = list.scrollHeight;
+        
+        // Após o primeiro carregamento, libera as notificações para próximas mensagens
+        isInitialLoad = false;
     });
-
+    
     activeUnsubscribes.push(unsub);
-
+    
+    // Rolagem para cima carrega mais
     list.onscroll = () => {
-        if (list.scrollTop === 0) {
-            loadMessages(chatId, true);
+        if(list.scrollTop === 0) {
+            // console.log("Carregar mais mensagens...");
         }
     };
 }
