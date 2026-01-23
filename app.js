@@ -418,34 +418,54 @@ async function enterChat(chatId, otherId, otherUser, dispName) {
                                                                        }
                                          
 
+let lastMessageVisible = null;
 
-function loadMessages(chatId) {
+function loadMessages(chatId, loadMore = false) {
     const list = document.getElementById('messages-list');
-    list.innerHTML = '';
     
-    // Paginação: 15 mensagens
-    const q = query(collection(db, "conversations", chatId, "messages"), orderBy("createdAt", "desc"), limit(15));
-    
-    const unsub = onSnapshot(q, (snap) => {
-        // Inverte pois recebemos do mais novo pro mais velho, mas chat é de baixo pra cima
-        const docs = snap.docs.reverse();
+    let q = query(
+        collection(db, "conversations", chatId, "messages"),
+        orderBy("createdAt", "desc"),
+        limit(15)
+    );
+
+    if (loadMore && lastMessageVisible) {
+        q = query(
+            collection(db, "conversations", chatId, "messages"),
+            orderBy("createdAt", "desc"),
+            startAfter(lastMessageVisible),
+            limit(15)
+        );
+    }
+
+    onSnapshot(q, (snap) => {
+        if (snap.empty) return;
+        if (!loadMore) list.innerHTML = '';
         
-        list.innerHTML = '';
-        docs.forEach(d => renderMessage(d.data(), auth.currentUser.uid === d.data().senderId, list));
+        lastMessageVisible = snap.docs[snap.docs.length - 1];
         
-        // Rolar para baixo ao carregar
-        list.scrollTop = list.scrollHeight;
+        const docs = [...snap.docs].reverse();
+        docs.forEach(d => {
+            const msgData = d.data();
+            renderMessage(msgData, auth.currentUser.uid === msgData.senderId, list, loadMore);
+            
+            // Lógica de Notificação: Se a mensagem é nova e não foi enviada por mim
+            if (!isMe && !loadMore && msgData.createdAt?.toMillis() > (Date.now() - 5000)) {
+                // Aqui você precisaria buscar o nome do remetente
+                showLocalNotification("Someone"); 
+            }
+        });
     });
-    activeUnsubscribes.push(unsub);
-    
-    // Rolagem para cima carrega mais (Lógica simplificada: user rola e o sistema deveria buscar startAfter)
-    list.onscroll = () => {
-        if(list.scrollTop === 0) {
-            // Aqui entraria a lógica de 'startAfter' do Firebase usando o último doc carregado
-            // console.log("Carregar mais mensagens...");
-        }
-    };
 }
+
+// Evento de scroll
+document.getElementById('messages-list').onscroll = function() {
+    if (this.scrollTop === 0) {
+        loadMessages(currentChatId, true);
+    }
+};
+
+
 
 function renderMessage(msg, isMe, container) {
     const div = document.createElement('div');
