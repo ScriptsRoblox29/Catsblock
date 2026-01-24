@@ -19,6 +19,36 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 
 
+// --- MONITOR DE ERROS E TIMEOUT ---
+// Se o carregamento (onAuthStateChanged) demorar mais de 8s, libera a tela
+const authTimeout = setTimeout(() => {
+    const loader = document.getElementById('loading-screen');
+    if (loader && !loader.classList.contains('hidden')) {
+        loader.classList.add('hidden');
+        if (!auth.currentUser) Router.go('login-frame');
+    }
+}, 8000);
+
+// Captura falhas de conexão ou erros de servidor
+window.addEventListener('unhandledrejection', (event) => {
+    // Esconde todos os frames para o erro aparecer sozinho
+    document.querySelectorAll('.frame').forEach(f => f.classList.add('hidden'));
+    
+    const errorScreen = document.getElementById('error-screen');
+    const errorDetails = document.getElementById('error-details');
+
+    if (errorScreen) {
+        errorScreen.classList.remove('hidden');
+        errorDetails.innerHTML = `
+            Failed to connect to the server.<br>
+            <strong>error information:</strong> ${event.reason?.message || event.reason}<br>
+            <strong>error code:</strong> ${event.reason?.code || 'ERR_CONNECTION_FAILED'}
+        `;
+    }
+});
+// ----------------------------------
+
+
 
 
 // --- ESTADO GLOBAL ---
