@@ -5,14 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>CatsBlock</title>
     <link rel="stylesheet" href="style.css">
+
+    <script>
+        setTimeout(() => {
+            const loader = document.getElementById('loading-screen');
+            if (loader) {
+                loader.classList.add('hidden');
+                console.log("Sistema de emergência: Carregamento removido.");
+            }
+        }, 4000); // 4 segundos é o tempo de segurança
+    </script>
 </head>
 <body>
 
     <div id="toast-container"></div>
 
-    <div id="loading-screen" class="frame">
-        <div class="spinner"></div>
-    </div>
+    <div id="loading-screen" class="frame" onclick="this.classList.add('hidden')">
+    <div class="spinner"></div>
+</div>
 
     <div id="login-frame" class="frame hidden">
         <div class="login-content">
