@@ -83,25 +83,37 @@ const Router = {
     }
 };
 
-// --- AUTENTICAÇÃO (CORRIGIDO) ---
+// --- AUTENTICAÇÃO (SOLUÇÃO DEFINITIVA PARA O CARREGAMENTO INFINITO) ---
 onAuthStateChanged(auth, async (user) => {
     const loader = document.getElementById('loading-screen');
-    if (user) {
-        loader.classList.remove('hidden');
-        try {
-            await syncUser(user);
-            // Se chegou aqui, deu tudo certo
-        } catch (e) {
-            // Se as Rules negarem, o erro cai aqui e limpamos o loader
-            console.error("Acesso negado pelas regras:", e);
-        }
-        loader.classList.add('hidden');
-        Router.go('main-frame');
-    } else {
-        loader.classList.add('hidden');
+    
+    // 1. Se não tem usuário, para o loader e vai pro login imediatamente
+    if (!user) {
+        if (loader) loader.classList.add('hidden');
         Router.go('login-frame');
+        return; 
+    }
+
+    // 2. Se tem usuário, tenta o sync, mas com proteção contra travamento
+    loader.classList.remove('hidden');
+    
+    try {
+        // Tenta sincronizar. Se as regras barrarem, ele cai no catch.
+        await syncUser(user);
+        Router.go('main-frame');
+    } catch (e) {
+        console.error("As regras do Firebase ou a rede travaram o sync:", e);
+        // Opcional: Se quiser que o erro técnico apareça na sua tela de erro:
+        window.dispatchEvent(new PromiseRejectionEvent('unhandledrejection', {
+            promise: Promise.reject(e),
+            reason: e
+        }));
+    } finally {
+        // 3. ESSA LINHA É OBRIGATÓRIA. Ela roda mesmo se der erro ou sucesso.
+        if (loader) loader.classList.add('hidden');
     }
 });
+
 
 
 document.getElementById('btn-google-login').onclick = () => {
