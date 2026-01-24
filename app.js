@@ -21,17 +21,22 @@ const storage = getStorage(app);
 
 
 onAuthStateChanged(auth, (user) => {
-    // 1. Força o carregamento a sumir
-    document.getElementById('loading-screen').style.display = 'none';
+    // 1. Tira o carregamento
+    const loader = document.getElementById('loading-screen');
+    if (loader) loader.style.display = 'none';
+
+    // 2. Define qual tela mostrar sem depender do "Router"
+    const frameId = user ? 'main-frame' : 'login-frame';
+    
+    // 3. Esconde todas as telas e mostra a certa
+    document.querySelectorAll('.frame').forEach(f => f.classList.add('hidden'));
+    document.getElementById(frameId)?.classList.remove('hidden');
 
     if (user) {
-        // 2. Se estiver logado, mostra o frame principal na marra
-        document.getElementById('main-frame').classList.remove('hidden');
-    } else {
-        // 3. Se não estiver, mostra o login na marra
-        document.getElementById('login-frame').classList.remove('hidden');
+        syncUser(user).catch(e => console.log("Erro sync:", e));
     }
 });
+
 
 
 
