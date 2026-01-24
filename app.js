@@ -83,34 +83,23 @@ const Router = {
     }
 };
 
-// --- AUTENTICAÇÃO (SOLUÇÃO DEFINITIVA PARA O CARREGAMENTO INFINITO) ---
+
 onAuthStateChanged(auth, async (user) => {
     const loader = document.getElementById('loading-screen');
     
-    // 1. Se não tem usuário, para o loader e vai pro login imediatamente
-    if (!user) {
-        if (loader) loader.classList.add('hidden');
+    if (user) {
+        loader.classList.remove('hidden'); // 1. Começa a carregar
+        try {
+            await syncUser(user);      // 2. Tenta falar com o Firebase
+        } catch (e) {
+            console.error("Erro nas Rules:", e); // 3. Se a regra de 61 linhas barrar, o erro morre aqui e não trava o site
+        } finally {
+            loader.classList.add('hidden');    // 4. ACONTEÇA O QUE ACONTECER, O LOADER SOME AQUI
+            Router.go('main-frame');
+        }
+    } else {
+        loader.classList.add('hidden');
         Router.go('login-frame');
-        return; 
-    }
-
-    // 2. Se tem usuário, tenta o sync, mas com proteção contra travamento
-    loader.classList.remove('hidden');
-    
-    try {
-        // Tenta sincronizar. Se as regras barrarem, ele cai no catch.
-        await syncUser(user);
-        Router.go('main-frame');
-    } catch (e) {
-        console.error("As regras do Firebase ou a rede travaram o sync:", e);
-        // Opcional: Se quiser que o erro técnico apareça na sua tela de erro:
-        window.dispatchEvent(new PromiseRejectionEvent('unhandledrejection', {
-            promise: Promise.reject(e),
-            reason: e
-        }));
-    } finally {
-        // 3. ESSA LINHA É OBRIGATÓRIA. Ela roda mesmo se der erro ou sucesso.
-        if (loader) loader.classList.add('hidden');
     }
 });
 
