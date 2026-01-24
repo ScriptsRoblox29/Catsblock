@@ -17,9 +17,27 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
-document.documentElement.innerHTML = "<h1>O código rodou até aqui!</h1>";
 
 
+
+onAuthStateChanged(auth, (user) => {
+    const loader = document.getElementById('loading-screen');
+    
+    // Tira o carregamento da frente
+    if (loader) loader.style.display = 'none';
+
+    if (user) {
+        // Se estiver logado, vai pro site
+        syncUser(user).then(() => {
+            Router.go('main-frame');
+        }).catch(() => {
+            Router.go('main-frame'); 
+        });
+    } else {
+        // Se não estiver, vai pro login
+        Router.go('login-frame');
+    }
+});
 
 
 
@@ -55,27 +73,6 @@ const Router = {
     }
 };
 
-
-onAuthStateChanged(auth, (user) => {
-    const loader = document.getElementById('loading-screen');
-    
-    // 1. Mata o carregamento IMEDIATAMENTE
-    if (loader) loader.style.display = 'none';
-
-    if (user) {
-        console.log("Usuário logado:", user.uid);
-        // Só tenta rodar o resto se houver usuário
-        syncUser(user).then(() => {
-            Router.go('main-frame');
-        }).catch(err => {
-            console.error("Erro ao sincronizar:", err);
-            Router.go('main-frame'); // Força a entrada mesmo com erro
-        });
-    } else {
-        console.log("Nenhum usuário. Indo para login.");
-        Router.go('login-frame');
-    }
-});
 
 
 
