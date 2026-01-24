@@ -21,21 +21,24 @@ const storage = getStorage(app);
 
 
 onAuthStateChanged(auth, (user) => {
-    // 1. Tira o carregamento
-    const loader = document.getElementById('loading-screen');
-    if (loader) loader.style.display = 'none';
-
-    // 2. Define qual tela mostrar sem depender do "Router"
-    const frameId = user ? 'main-frame' : 'login-frame';
-    
-    // 3. Esconde todas as telas e mostra a certa
-    document.querySelectorAll('.frame').forEach(f => f.classList.add('hidden'));
-    document.getElementById(frameId)?.classList.remove('hidden');
+    document.getElementById('loading-screen').style.display = 'none';
 
     if (user) {
-        syncUser(user).catch(e => console.log("Erro sync:", e));
+        syncUser(user).then(() => Router.go('main-frame'));
+    } else {
+        // --- A MÁGICA AQUI: USUÁRIO FALSO ---
+        currentUserData = {
+            uid: "0",
+            displayName: "Account not logged",
+            photoURL: "https://www.gstatic.com/images/branding/product/1x/avatar_square_grey_512dp.png",
+            blockedUsers: []
+        };
+        
+        // Agora o código não quebra mais ao tentar ler currentUserData.uid!
+        Router.go('login-frame');
     }
 });
+
 
 
 
