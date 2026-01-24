@@ -44,9 +44,14 @@
         </main>
 
         <main id="tab-profile" class="tab-content">
-            <div class="profile-header-actions">
-                <button id="profile-menu-btn"><i class='bx bx-dots-vertical-rounded'></i></button>
-            </div>
+    <div class="profile-header-actions">
+        <button id="profile-menu-btn"><i class='bx bx-dots-vertical-rounded'></i></button>
+        <div id="profile-menu-popup" class="popup-menu hidden">
+            <button id="menu-settings">Settings</button>
+            <button id="menu-logout" class="text-danger">Log out</button>
+        </div>
+    </div>
+            
             
             <div class="profile-view-container">
                 <img id="my-profile-pic" src="" alt="Profile">
@@ -104,11 +109,6 @@
             </div>
             <p class="setting-desc">If disabled, no one can start a new chat with you.</p>
         </div>
-    </div>
-
-    <div id="profile-menu-popup" class="popup-menu hidden">
-        <button id="menu-settings">Settings</button>
-        <button id="menu-logout" class="text-danger">Log out</button>
     </div>
 
     <div id="modal-new-chat" class="modal-overlay hidden">
