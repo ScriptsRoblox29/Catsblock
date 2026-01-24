@@ -57,22 +57,23 @@ const Router = {
 
 onAuthStateChanged(auth, async (user) => {
     const loader = document.getElementById('loading-screen');
-    
-    // ORDEM INVERSA: Primeiro a gente garante que a tela vai ser liberada
     if (loader) loader.classList.add('hidden'); 
 
     if (user) {
-        // Agora, com a tela já liberada, a gente tenta carregar os dados
-        // Se o syncUser quebrar aqui, a tela já está aberta!
-        syncUser(user).then(() => {
+        try {
+            await syncUser(user);
+            // Se chegou aqui, deu tudo certo
             Router.go('main-frame');
-        }).catch(e => {
-            console.error("Dados não carregaram, mas a tela não travou:", e);
-        });
+        } catch (e) {
+            console.error("Erro no Sync, mas vou tentar entrar assim mesmo:", e);
+            // Tenta entrar mesmo com erro nos dados para não ficar preso
+            Router.go('main-frame'); 
+        }
     } else {
         Router.go('login-frame');
     }
 });
+
 
 
 
@@ -124,13 +125,21 @@ async function syncUser(user) {
 
 
 function applyTheme() {
+    if(!currentUserData) return;
+
     if(currentUserData.darkMode) document.body.setAttribute('data-theme', 'dark');
     else document.body.removeAttribute('data-theme');
     
-    document.getElementById('setting-dark-mode').value = currentUserData.darkMode ? 'on' : 'off';
-    document.getElementById('setting-accept-new').value = currentUserData.acceptNew ? 'yes' : 'no';
-    document.getElementById('setting-last-seen').value = currentUserData.lastSeenPrivacy;
+    // Verifica se o elemento existe antes de tentar mudar o valor
+    const darkEl = document.getElementById('setting-dark-mode');
+    const acceptEl = document.getElementById('setting-accept-new');
+    const privacyEl = document.getElementById('setting-last-seen');
+
+    if (darkEl) darkEl.value = currentUserData.darkMode ? 'on' : 'off';
+    if (acceptEl) acceptEl.value = currentUserData.acceptNew ? 'yes' : 'no';
+    if (privacyEl) privacyEl.value = currentUserData.lastSeenPrivacy;
 }
+
 
 // Configurações e Menu
 document.getElementById('btn-save-settings').onclick = async () => {
