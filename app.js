@@ -90,15 +90,23 @@ document.querySelectorAll('.nav-icon').forEach(btn => {
 });
 
 // Profile & Menu Logic
-document.getElementById('profile-menu-btn').onclick = (e) => {
-    e.stopPropagation();
-    document.getElementById('profile-menu-popup').classList.toggle('hidden');
-};
-document.onclick = (e) => {
-    if(!e.target.closest('#profile-menu-btn')) {
-        document.getElementById('profile-menu-popup').classList.add('hidden');
-    }
-};
+const profileMenuBtn = document.getElementById('profile-menu-btn');
+const profileMenuPopup = document.getElementById('profile-menu-popup');
+
+if (profileMenuBtn && profileMenuPopup) {
+    profileMenuBtn.onclick = (e) => {
+        e.stopPropagation(); 
+        profileMenuPopup.classList.toggle('hidden');
+    };
+
+    document.addEventListener('click', (e) => {
+        if (!profileMenuPopup.contains(e.target)) {
+            profileMenuPopup.classList.add('hidden');
+        }
+    });
+
+    profileMenuPopup.onclick = (e) => e.stopPropagation();
+}
 
 document.getElementById('menu-logout').onclick = () => signOut(auth);
 
