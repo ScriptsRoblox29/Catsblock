@@ -1,206 +1,144 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>CatsBlock</title>
     <link rel="stylesheet" href="style.css">
-
-    <script>
-        setTimeout(() => {
-            const loader = document.getElementById('loading-screen');
-            if (loader) {
-                loader.classList.add('hidden');
-                console.log("Sistema de emergência: Carregamento removido.");
-            }
-        }, 4000); // 4 segundos é o tempo de segurança
-    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
 <body>
 
-    <div id="toast-container"></div>
+    <div id="splash-screen" class="screen active-flex">
+        <div class="loader-purple"></div>
+        <p class="connecting-text">Connecting...</p>
+    </div>
 
-    <div id="loading-screen" class="frame" onclick="this.classList.add('hidden')">
-    <div class="spinner"></div>
-</div>
-
-    <div id="login-frame" class="frame hidden">
+    <div id="login-screen" class="screen">
         <div class="login-content">
-            <h1 class="login-title">Log in to CatsBlock</h1>
-            <button id="btn-google-login" class="btn btn-primary">
-                <svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z"/></svg>
-                Log in with Google
+            <h1>Log in to access our chat site</h1>
+            <button id="google-login-btn">
+                <i class='bx bxl-google'></i>
+                <span>Continue with Google</span>
+                <div class="loader-mini hidden"></div>
             </button>
-            <div class="login-footer">
-                By continuing, you agree to our <a href="#" id="link-tos-login">terms of service.</a>
-            </div>
-        </div>
-        <div id="login-loader" class="overlay-loader hidden">
-            <div class="spinner"></div>
+            <p class="terms-text">
+                By continuing, you agree to our 
+                <a href="https://docs.google.com/document/d/1aB2LW5R3AuPpPiBvISFxS8d4ftbXWYa4TgAa-K_xwfI/edit?usp=drivesdk" target="_blank">terms of service</a>.
+            </p>
         </div>
     </div>
 
-    <div id="main-frame" class="frame hidden">
-        <header>
-            <div class="brand">CatsBlock</div>
-            <div class="header-actions">
-                <div id="menu-trigger" class="icon-btn">
-                    <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M12,16A2,2 0 0,1 14,18A2,2 0 0,1 12,20A2,2 0 0,1 10,18A2,2 0 0,1 12,16M12,10A2,2 0 0,1 14,12A2,2 0 0,1 12,14A2,2 0 0,1 10,12A2,2 0 0,1 12,10M12,4A2,2 0 0,1 14,6A2,2 0 0,1 12,8A2,2 0 0,1 10,6A2,2 0 0,1 12,4Z"/></svg>
+    <div id="main-screen" class="screen">
+        <header class="topbar">
+            <span class="logo">CatsBlock</span>
+        </header>
+
+        <main id="tab-conversations" class="tab-content active">
+            <div id="loading-chats" class="loader-center">
+                <div class="loader-purple"></div>
+            </div>
+            <div id="no-chats-msg" class="hidden">No further conversations for now.</div>
+            <ul id="conversations-list"></ul>
+        </main>
+
+        <main id="tab-profile" class="tab-content">
+            <div class="profile-header-actions">
+                <button id="profile-menu-btn"><i class='bx bx-dots-vertical-rounded'></i></button>
+            </div>
+            
+            <div class="profile-view-container">
+                <img id="my-profile-pic" src="" alt="Profile">
+                <h2 id="my-display-name"></h2>
+                <div class="id-display">ID: <span id="my-uid-display"></span></div>
+                
+                <div class="input-group">
+                    <label>Description</label>
+                    <textarea id="my-description-input" placeholder="Add a description..."></textarea>
                 </div>
-                <div id="main-menu" class="dropdown">
-                    <div class="dropdown-item" id="menu-profile">About your profile</div>
-                    <div class="dropdown-item" id="menu-settings">Settings</div>
-                    <div class="dropdown-item" id="menu-tos">Terms of service</div>
-                    <div class="dropdown-item text-red" id="menu-logout">Logout</div>
-                </div>
+                <button id="save-profile-btn" class="btn-primary">Save Changes</button>
+            </div>
+        </main>
+
+        <button id="fab-new-chat" class="fab"><i class='bx bx-pencil'></i></button>
+
+        <nav class="downbar">
+            <button class="nav-icon active" data-target="tab-conversations">
+                <i class='bx bx-message-square-dots'></i>
+            </button>
+            <button class="nav-icon" data-target="tab-profile">
+                <i class='bx bx-user'></i>
+            </button>
+        </nav>
+    </div>
+
+    <div id="chat-screen" class="screen">
+        <header class="chat-topbar">
+            <button id="back-btn"><i class='bx bx-chevron-left'></i></button>
+            <div class="chat-header-info" id="chat-header-clickable">
+                <img id="chat-header-img" src="" alt="">
+                <h3 id="chat-header-name">User</h3>
             </div>
         </header>
 
-        <div id="chat-list" class="scroll-area"></div>
+        <div id="messages-container"></div>
 
-        <div class="fab" id="btn-new-chat">
-            <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M14.06,9L15,9.94L5.92,19H5V18.08L14.06,9M17.66,3C17.41,3 17.15,3.1 16.96,3.29L15.13,5.12L18.88,8.87L20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18.17,3.09 17.92,3 17.66,3M14.06,6.19L3,17.25V21H6.75L17.81,9.94L14.06,6.19Z"/></svg>
+        <div class="chat-input-area">
+            <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
+            <button id="send-btn"><i class='bx bx-send'></i></button>
         </div>
     </div>
 
-    <div id="new-chat-modal" class="modal-overlay hidden">
-        <div class="modal">
-            <div class="modal-header">
-                New Conversation
-                <span class="modal-close" data-close="new-chat-modal">
-                    <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/></svg>
-                </span>
-            </div>
-            <div class="modal-body">
-                <p class="modal-desc">Enter ID to chat.</p>
-                <div class="input-group">
-                    <label>Display name (Max 30)</label>
-                    <input type="text" id="new-chat-name" maxlength="30" minlength="1">
-                </div>
-                <div class="input-group">
-                    <label>Account ID</label>
-                    <input type="number" id="new-chat-id" placeholder="Ex: 1">
-                </div>
-                <button class="btn btn-primary full-width" id="btn-start-chat">Start Chat</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="conversation-frame" class="frame hidden">
-        <div class="chat-header">
-            <div class="chat-back" id="btn-close-chat">
-                <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
-            </div>
-            <div class="chat-user-info" id="chat-header-clickable">
-                <img src="" alt="" id="chat-header-img">
-                <div class="chat-header-text">
-                    <span id="chat-header-name">User</span>
-                    <span id="chat-header-status" class="status-subtitle">Offline</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="messages-container" id="messages-list"></div>
-
-        <div class="chat-input-area" id="input-area-text">
-            <input type="text" id="msg-input" placeholder="Message..." autocomplete="off">
-            <button class="icon-btn-send" id="btn-send-msg">
-                <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/></svg>
-            </button>
-        </div>
-    </div>
-
-    <div id="settings-frame" class="frame hidden">
-        <div class="chat-header">
-            <div class="chat-back" id="btn-close-settings">
-                <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
-            </div>
-            <span class="header-title">Settings</span>
-        </div>
+    <div id="settings-screen" class="screen">
+        <header class="settings-topbar">
+            <button id="settings-back-btn"><i class='bx bx-chevron-left'></i></button>
+            <h3>Settings</h3>
+        </header>
         <div class="settings-content">
-            <h3>Display</h3>
-            <div class="input-group">
-                <label>Dark Mode</label>
-                <select id="setting-dark-mode">
-                    <option value="off">Disabled</option>
-                    <option value="on">Enabled</option>
-                </select>
+            <div class="setting-item">
+                <span>Accept new conversations</span>
+                <div class="toggle-switch" id="toggle-accept-new">
+                    <div class="toggle-knob"></div>
+                </div>
             </div>
-            <h3>Privacy</h3>
-            <div class="input-group">
-                <label>Accept new conversations</label>
-                <select id="setting-accept-new">
-                    <option value="yes">Yes</option>
-                    <option value="no">No</option>
-                </select>
-            </div>
-            <div class="input-group">
-                <label>Last seen</label>
-                <select id="setting-last-seen">
-                    <option value="all">All</option>
-                    <option value="nobody">Nobody</option>
-                </select>
-            </div>
-            <button class="btn btn-primary full-width mt-20" id="btn-save-settings">Save</button>
+            <p class="setting-desc">If disabled, no one can start a new chat with you.</p>
         </div>
     </div>
 
-    <div id="profile-details-modal" class="modal-overlay hidden">
-        <div class="modal">
-            <div class="modal-header">
-                Profile
-                <span class="modal-close" data-close="profile-details-modal">
-                     <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/></svg>
-                </span>
-            </div>
-            <div class="modal-body center-text">
-                <img src="" class="profile-lg-img" id="profile-modal-img">
-                <h2 id="profile-modal-name"></h2>
-                <div class="profile-stat" id="profile-modal-id"></div>
-                <div class="profile-desc" id="profile-modal-desc"></div>
-                <div id="profile-edit-container" class="hidden">
-                    <textarea id="profile-desc-input" maxlength="150" placeholder="Edit description..."></textarea>
-                    <button class="btn btn-primary full-width" id="btn-save-profile">Save Description</button>
-                </div>
-                <div class="profile-actions" id="profile-actions-others">
-                    <button class="btn btn-red-outline" id="btn-block-user">Block this account</button>
-                    <button class="btn btn-red-outline" id="btn-report-user">Report this profile</button>
-                </div>
+    <div id="profile-menu-popup" class="popup-menu hidden">
+        <button id="menu-settings">Settings</button>
+        <button id="menu-logout" class="text-danger">Log out</button>
+    </div>
+
+    <div id="modal-new-chat" class="modal-overlay hidden">
+        <div class="modal-box">
+            <h3>New Conversation</h3>
+            <input type="text" id="new-chat-id" placeholder="User ID (Required)">
+            <input type="text" id="new-chat-name" placeholder="Display Name (Required)">
+            <div class="modal-buttons">
+                <button id="close-new-chat">Close</button>
+                <button id="confirm-new-chat" class="btn-purple">Create</button>
             </div>
         </div>
     </div>
 
-    <div id="block-confirm-modal" class="modal-overlay hidden">
-        <div class="modal">
-            <div class="modal-body">
-                <p>Are you sure you want to block this profile?</p>
-                <div class="modal-buttons">
-                    <button class="btn" data-close="block-confirm-modal">Never mind</button>
-                    <button class="btn btn-red" id="btn-confirm-block">Block</button>
-                </div>
-            </div>
+    <div id="modal-user-info" class="modal-overlay hidden">
+        <div class="modal-box profile-card">
+            <button class="close-modal-x" id="close-user-info">&times;</button>
+            <img id="info-img" src="">
+            <h2 id="info-name"></h2>
+            <p id="info-desc"></p>
+            <button id="btn-block-user" class="btn-danger">Block</button>
         </div>
     </div>
 
-    <div id="delete-chat-modal" class="modal-overlay hidden">
-        <div class="modal">
-            <div class="modal-body">
-                <p>Do you really want to delete this conversation permanently?</p>
-                <div class="modal-buttons">
-                    <button class="btn btn-red" id="btn-confirm-delete-chat">Delete</button>
-                    <button class="btn" data-close="delete-chat-modal">Never mind</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="report-modal" class="modal-overlay hidden">
-        <div class="modal">
-            <div class="modal-header">Report <span class="modal-close" data-close="report-modal">
-                 <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/></svg>
-            </span></div>
-            <div class="modal-body">
-                <p>To report this profile, show the conversations as proof and send them to the owner, named fmafioso on TikTok.</p>
+    <div id="modal-confirm" class="modal-overlay hidden">
+        <div class="modal-box">
+            <p id="confirm-text"></p>
+            <div class="modal-buttons">
+                <button id="confirm-cancel">Never mind</button>
+                <button id="confirm-action" class="btn-danger">Delete</button>
             </div>
         </div>
     </div>
