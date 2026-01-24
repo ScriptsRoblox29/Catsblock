@@ -166,52 +166,62 @@ function formatTime(timestamp) {
 
 // Conversation List
 function initConversationsListener() {
-    const q = query(collection(db, "conversations"), where("participants", "array-contains", currentUser.uid), orderBy("lastMessageTime", "desc"));
+    // Busca conversas onde eu participo, ordenadas pela última mensagem
+    const q = query(
+        collection(db, "conversations"), 
+        where("participants", "array-contains", currentUser.uid), 
+        orderBy("lastMessageTime", "desc")
+    );
     
-    onSnapshot(q, (snapshot) => {
-        document.getElementById('loading-chats').classList.add('hidden');
+    onSnapshot(q, async (snapshot) => {
+        const loader = document.getElementById('loading-chats');
+        if (loader) loader.classList.add('hidden');
+        
         const list = document.getElementById('conversations-list');
         list.innerHTML = '';
         
-        if (snapshot.empty) return document.getElementById('no-chats-msg').classList.remove('hidden');
+        if (snapshot.empty) {
+            document.getElementById('no-chats-msg').classList.remove('hidden');
+            return;
+        }
+        
         document.getElementById('no-chats-msg').classList.add('hidden');
 
-        snapshot.forEach(async docSnap => {
+        // Pegamos os dados do meu perfil uma vez só para checar bloqueados
+        const mySnap = await getDoc(doc(db, "users", currentUser.uid));
+        const myData = mySnap.data();
+        const blockedByMe = myData.blockedUsers || [];
+
+        snapshot.forEach((docSnap) => {
             const data = docSnap.data();
             const otherId = data.participants.find(id => id !== currentUser.uid);
             
-            // Check if I blocked them (Hide from list if blocked)
-            const myData = (await getDoc(doc(db, "users", currentUser.uid))).data();
-            if (myData.blockedUsers && myData.blockedUsers.includes(otherId)) return;
+            // Pula se eu bloqueei essa pessoa
+            if (blockedByMe.includes(otherId)) return;
 
             const li = document.createElement('li');
             li.className = 'conv-item';
-            const unread = data.unreadCount?.[currentUser.uid] || 0;
+            
+            // Exibe o nome que está guardado na conversa (mais rápido)
             const displayName = data.displayNames?.[otherId] || "User";
-
-            // Get photo async (basic, better to store in conv, but fetching for realness)
-            const otherUserSnap = await getDoc(doc(db, "users", otherId));
-            const photo = otherUserSnap.exists() ? otherUserSnap.data().photoURL : "https://ui-avatars.com/api/?name=User";
+            const unread = data.unreadCount?.[currentUser.uid] || 0;
 
             li.innerHTML = `
-                <img class="conv-img" src="${photo}">
-                <div class="conv-info"><div class="conv-name">${displayName}</div></div>
+                <div class="conv-info">
+                    <div class="conv-name">${displayName}</div>
+                </div>
                 ${unread > 0 ? `<div class="conv-badge">${unread}</div>` : ''}
             `;
             
-            li.onclick = () => openChat(docSnap.id, otherId, displayName, photo);
-            
-            // Long Press Delete
-            let timer;
-            const startPress = () => timer = setTimeout(() => showDeleteConfirm(docSnap.id), 800);
-            const cancelPress = () => clearTimeout(timer);
-            li.onmousedown = startPress; li.onmouseup = cancelPress;
-            li.ontouchstart = startPress; li.ontouchend = cancelPress;
-            
+            li.onclick = () => openChat(docSnap.id, otherId, displayName, "");
             list.appendChild(li);
         });
+    }, (error) => {
+        console.error("Error loading chats:", error);
+        // Se cair aqui, é quase certeza que falta o ÍNDICE no Firebase
     });
 }
+
 
 // Create Chat
 const newChatModal = document.getElementById('modal-new-chat');
