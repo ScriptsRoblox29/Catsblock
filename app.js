@@ -21,23 +21,33 @@ const storage = getStorage(app);
 
 
 onAuthStateChanged(auth, (user) => {
-    document.getElementById('loading-screen').style.display = 'none';
+    try {
+        // Força o sumiço do loader
+        const loader = document.getElementById('loading-screen');
+        if (loader) loader.style.display = 'none';
 
-    if (user) {
-        syncUser(user).then(() => Router.go('main-frame'));
-    } else {
-        // --- A MÁGICA AQUI: USUÁRIO FALSO ---
-        currentUserData = {
-            uid: "0",
-            displayName: "Account not logged",
-            photoURL: "https://www.gstatic.com/images/branding/product/1x/avatar_square_grey_512dp.png",
-            blockedUsers: []
-        };
-        
-        // Agora o código não quebra mais ao tentar ler currentUserData.uid!
-        Router.go('login-frame');
+        if (user) {
+            console.log("Usuário logado:", user.uid);
+            syncUser(user)
+                .then(() => Router.go('main-frame'))
+                .catch(err => {
+                    alert("Erro no Sync: " + err.message);
+                    Router.go('main-frame'); // Tenta ir mesmo com erro
+                });
+        } else {
+            currentUserData = {
+                uid: "0",
+                displayName: "Account not logged",
+                photoURL: "",
+                blockedUsers: []
+            };
+            Router.go('login-frame');
+        }
+    } catch (e) {
+        alert("Erro fatal no código: " + e.message);
     }
 });
+
 
 
 
