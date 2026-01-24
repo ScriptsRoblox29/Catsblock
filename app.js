@@ -19,35 +19,6 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 
 
-// --- MONITOR DE ERROS E TIMEOUT ---
-// Se o carregamento (onAuthStateChanged) demorar mais de 8s, libera a tela
-const authTimeout = setTimeout(() => {
-    const loader = document.getElementById('loading-screen');
-    if (loader && !loader.classList.contains('hidden')) {
-        loader.classList.add('hidden');
-        if (!auth.currentUser) Router.go('login-frame');
-    }
-}, 8000);
-
-// Captura falhas de conexão ou erros de servidor
-window.addEventListener('unhandledrejection', (event) => {
-    // Esconde todos os frames para o erro aparecer sozinho
-    document.querySelectorAll('.frame').forEach(f => f.classList.add('hidden'));
-    
-    const errorScreen = document.getElementById('error-screen');
-    const errorDetails = document.getElementById('error-details');
-
-    if (errorScreen) {
-        errorScreen.classList.remove('hidden');
-        errorDetails.innerHTML = `
-            Failed to connect to the server.<br>
-            <strong>error information:</strong> ${event.reason?.message || event.reason}<br>
-            <strong>error code:</strong> ${event.reason?.code || 'ERR_CONNECTION_FAILED'}
-        `;
-    }
-});
-// ----------------------------------
-
 
 
 
@@ -87,21 +58,22 @@ const Router = {
 onAuthStateChanged(auth, async (user) => {
     const loader = document.getElementById('loading-screen');
     
+    // ORDEM INVERSA: Primeiro a gente garante que a tela vai ser liberada
+    if (loader) loader.classList.add('hidden'); 
+
     if (user) {
-        loader.classList.remove('hidden'); // 1. Começa a carregar
-        try {
-            await syncUser(user);      // 2. Tenta falar com o Firebase
-        } catch (e) {
-            console.error("Erro nas Rules:", e); // 3. Se a regra de 61 linhas barrar, o erro morre aqui e não trava o site
-        } finally {
-            loader.classList.add('hidden');    // 4. ACONTEÇA O QUE ACONTECER, O LOADER SOME AQUI
+        // Agora, com a tela já liberada, a gente tenta carregar os dados
+        // Se o syncUser quebrar aqui, a tela já está aberta!
+        syncUser(user).then(() => {
             Router.go('main-frame');
-        }
+        }).catch(e => {
+            console.error("Dados não carregaram, mas a tela não travou:", e);
+        });
     } else {
-        loader.classList.add('hidden');
         Router.go('login-frame');
     }
 });
+
 
 
 
