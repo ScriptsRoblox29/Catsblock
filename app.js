@@ -17,6 +17,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
+document.documentElement.innerHTML = "<h1>O código rodou até aqui!</h1>";
 
 
 
