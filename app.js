@@ -56,21 +56,23 @@ const Router = {
 };
 
 
-onAuthStateChanged(auth, async (user) => {
+onAuthStateChanged(auth, (user) => {
     const loader = document.getElementById('loading-screen');
-    if (loader) loader.classList.add('hidden'); 
+    
+    // 1. Mata o carregamento IMEDIATAMENTE
+    if (loader) loader.style.display = 'none';
 
     if (user) {
-        try {
-            await syncUser(user);
-            // Se chegou aqui, deu tudo certo
+        console.log("Usuário logado:", user.uid);
+        // Só tenta rodar o resto se houver usuário
+        syncUser(user).then(() => {
             Router.go('main-frame');
-        } catch (e) {
-            console.error("Erro no Sync, mas vou tentar entrar assim mesmo:", e);
-            // Tenta entrar mesmo com erro nos dados para não ficar preso
-            Router.go('main-frame'); 
-        }
+        }).catch(err => {
+            console.error("Erro ao sincronizar:", err);
+            Router.go('main-frame'); // Força a entrada mesmo com erro
+        });
     } else {
+        console.log("Nenhum usuário. Indo para login.");
         Router.go('login-frame');
     }
 });
