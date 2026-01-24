@@ -21,23 +21,18 @@ const storage = getStorage(app);
 
 
 onAuthStateChanged(auth, (user) => {
-    const loader = document.getElementById('loading-screen');
-    
-    // Tira o carregamento da frente
-    if (loader) loader.style.display = 'none';
+    // 1. Força o carregamento a sumir
+    document.getElementById('loading-screen').style.display = 'none';
 
     if (user) {
-        // Se estiver logado, vai pro site
-        syncUser(user).then(() => {
-            Router.go('main-frame');
-        }).catch(() => {
-            Router.go('main-frame'); 
-        });
+        // 2. Se estiver logado, mostra o frame principal na marra
+        document.getElementById('main-frame').classList.remove('hidden');
     } else {
-        // Se não estiver, vai pro login
-        Router.go('login-frame');
+        // 3. Se não estiver, mostra o login na marra
+        document.getElementById('login-frame').classList.remove('hidden');
     }
 });
+
 
 
 
