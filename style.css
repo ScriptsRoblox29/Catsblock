@@ -1,5 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;600&family=Poppins:wght@600;700&display=swap');
-
+/* --- Global Variables & Reset --- */
 :root {
     --bg-dark: #0f0f1a;
     --card-bg: rgba(255, 255, 255, 0.03);
@@ -8,15 +7,15 @@
     --purple-light: #bc4eff;
     --text-white: #ffffff;
     --text-grey: #b0b0b0;
+    --danger: #ff4444;
     --shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
 }
 
-/* --- Reset Radical --- */
 * { 
-    margin: 0; padding: 0; box-sizing: border-box; 
-    -webkit-tap-highlight-color: transparent;
-    appearance: none; /* Remove visual padrão de botões e selects */
-    -webkit-appearance: none;
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+    -webkit-tap-highlight-color: transparent; 
 }
 
 body {
@@ -24,158 +23,248 @@ body {
     color: var(--text-white);
     font-family: 'Outfit', sans-serif;
     height: 100vh;
-    width: 100vw;
     overflow: hidden;
     display: flex;
     flex-direction: column;
 }
 
-/* --- Fix de Alinhamento Central --- */
+/* --- Utility Classes --- */
+.hidden { display: none !important; }
 .screen { 
     display: none; 
     width: 100%; 
     height: 100%; 
     position: absolute; 
-    top: 0; left: 0; 
+    top: 0; 
+    left: 0; 
+    background: transparent; 
     z-index: 10;
-    overflow-y: auto;
-    padding: 20px;
-    padding-bottom: 100px;
+    animation: fadeIn 0.5s ease-out;
 }
-
-/* Força o alinhamento central em telas de login/perfil */
-.active-flex { 
-    display: flex !important; 
-    flex-direction: column; 
-    align-items: center; 
-    justify-content: center; 
-    text-align: center;
-}
-
+.active-flex { display: flex !important; flex-direction: column; }
 .active { display: block !important; }
 
-/* --- Containers de Vidro (Cards) --- */
-.login-content, .profile-view-container, .settings-content {
-    background: var(--card-bg);
+/* --- Topbars (Glassmorphism) --- */
+.topbar, .chat-topbar, .settings-topbar {
+    height: 70px;
+    background: rgba(30, 30, 46, 0.6);
     backdrop-filter: blur(15px);
-    border: 1px solid var(--glass-border);
-    border-radius: 28px;
-    padding: 30px;
-    width: 100%;
-    max-width: 400px;
-    box-shadow: var(--shadow);
-    animation: slideUp 0.5s ease-out;
-}
-
-/* --- Botão "Toggle" / Configurações (Substituindo o texto feio) --- */
-.setting-item {
-    background: rgba(255, 255, 255, 0.05);
-    padding: 15px;
-    border-radius: 15px;
-    margin-bottom: 15px;
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--glass-border);
+    z-index: 100;
+}
+.logo { 
+    font-family: 'Poppins', sans-serif; 
+    font-size: 1.6rem; 
+    color: var(--purple-light); 
+    font-weight: 700;
+    filter: drop-shadow(0 0 10px rgba(188, 78, 255, 0.3));
+}
+
+/* --- Chat List & Conversations --- */
+.tab-content { 
+    height: calc(100vh - 130px); 
+    overflow-y: auto; 
+    display: none; 
+    padding: 10px 15px 80px 15px; 
+}
+
+.conv-item {
+    background: var(--card-bg);
+    backdrop-filter: blur(5px);
     border: 1px solid var(--glass-border);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
 }
+.conv-item:active { transform: scale(0.97); background: rgba(123, 31, 162, 0.1); }
+.conv-img { width: 55px; height: 55px; border-radius: 50%; border: 2px solid var(--purple-main); margin-right: 15px; }
+.conv-name { font-weight: 600; font-size: 1.1rem; color: white; }
 
-/* Switch customizado para o "Desativar Conversas" */
-.switch {
-    position: relative;
-    display: inline-block;
-    width: 50px;
-    height: 26px;
+/* --- Floating Action Button (FAB) --- */
+.fab {
+    position: fixed;
+    bottom: 85px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    background: var(--purple-main);
+    color: white;
+    border-radius: 20px;
+    border: none;
+    font-size: 1.8rem;
+    box-shadow: 0 10px 25px rgba(123, 31, 162, 0.4);
+    z-index: 90;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.3s;
 }
+.fab:hover { background: var(--purple-light); transform: translateY(-5px); }
 
-.switch input { opacity: 0; width: 0; height: 0; }
-
-.slider {
-    position: absolute; cursor: pointer;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background-color: #333;
-    transition: .4s; border-radius: 34px;
-}
-
-.slider:before {
-    position: absolute; content: "";
-    height: 18px; width: 18px;
-    left: 4px; bottom: 4px;
-    background-color: white;
-    transition: .4s; border-radius: 50%;
-}
-
-input:checked + .slider { background-color: var(--purple-light); }
-input:checked + .slider:before { transform: translateX(24px); }
-
-/* --- Inputs Totalmente Customizados --- */
-input[type="text"], input[type="email"], textarea, select {
+/* --- Downbar Navigation --- */
+.downbar {
+    position: fixed;
+    bottom: 0;
     width: 100%;
-    background: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid var(--glass-border) !important;
-    border-radius: 15px !important;
-    padding: 15px !important;
-    color: white !important;
-    font-size: 1rem;
-    margin-bottom: 15px;
-    outline: none !important;
-    text-align: center; /* Centraliza o texto dentro do input */
+    height: 70px;
+    background: rgba(15, 15, 26, 0.8);
+    backdrop-filter: blur(20px);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    border-top: 1px solid var(--glass-border);
+    z-index: 100;
+}
+.nav-icon { 
+    background: none; 
+    border: none; 
+    color: var(--text-grey); 
+    font-size: 1.8rem; 
+    transition: 0.3s; 
+}
+.nav-icon.active { color: var(--purple-light); filter: drop-shadow(0 0 8px var(--purple-light)); }
+
+/* --- Message Bubbles --- */
+#messages-container {
+    height: calc(100vh - 140px);
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: transparent;
+}
+.msg-bubble {
+    max-width: 80%;
+    padding: 12px 18px;
+    border-radius: 20px;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    position: relative;
+    backdrop-filter: blur(5px);
+}
+.msg-sent {
+    align-self: flex-end;
+    background: var(--purple-main);
+    color: white;
+    border-bottom-right-radius: 4px;
+    box-shadow: 0 4px 15px rgba(123, 31, 162, 0.3);
+}
+.msg-received {
+    align-self: flex-start;
+    background: var(--card-bg);
+    color: var(--text-white);
+    border: 1px solid var(--glass-border);
+    border-bottom-left-radius: 4px;
 }
 
-/* --- Botões Estilo Premium --- */
-button {
+/* --- Input Area --- */
+.chat-input-area {
+    padding: 10px 20px 25px 20px;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+#message-input {
+    flex: 1;
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    padding: 14px 20px;
+    border-radius: 15px;
+    color: white;
+    outline: none;
+    backdrop-filter: blur(10px);
+}
+
+/* --- Popup Menu (The 3 dots) --- */
+.popup-menu {
+    position: absolute;
+    top: 60px;
+    right: 20px;
+    background: #1a1a2a;
+    border: 1px solid var(--purple-main);
+    border-radius: 15px;
+    min-width: 160px;
+    box-shadow: var(--shadow);
+    z-index: 1000;
+    overflow: hidden;
+    animation: slideUp 0.3s ease-out;
+}
+.popup-menu button {
+    width: 100%;
+    padding: 15px;
+    background: none;
+    border: none;
+    color: white;
+    text-align: left;
+    font-family: 'Outfit';
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.popup-menu button:hover { background: var(--purple-main); }
+
+/* --- Modals --- */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+.modal-box {
+    background: #1e1e2e;
+    padding: 30px;
+    border-radius: 24px;
+    width: 90%;
+    max-width: 400px;
+    border: 1px solid var(--glass-border);
+    text-align: center;
+    box-shadow: var(--shadow);
+}
+
+/* --- Profile Styling --- */
+#my-profile-pic {
+    width: 110px;
+    height: 110px;
+    border-radius: 30px;
+    border: 3px solid var(--purple-light);
+    margin-bottom: 15px;
+    object-fit: cover;
+}
+.btn-primary {
     background: var(--purple-main);
     color: white;
     border: none;
-    padding: 16px;
+    padding: 15px;
     border-radius: 15px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
+    font-weight: 600;
+    width: 100%;
     cursor: pointer;
-    width: 100%;
-    box-shadow: 0 8px 20px rgba(123, 31, 162, 0.3);
-    transition: 0.3s;
+    box-shadow: 0 5px 15px rgba(123, 31, 162, 0.3);
 }
 
-button:hover { background: var(--purple-light); transform: translateY(-2px); }
+/* --- Animations --- */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-/* --- Lista de Conversas --- */
-.conv-item {
-    background: var(--card-bg) !important;
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--glass-border) !important;
-    border-radius: 20px !important;
-    padding: 18px;
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    width: 100%;
-}
-
-.conv-img {
-    width: 55px; height: 55px;
+/* --- Loader --- */
+.loader-purple {
+    width: 45px; height: 45px;
+    border: 4px solid rgba(188, 78, 255, 0.1);
+    border-top: 4px solid var(--purple-light);
     border-radius: 50%;
-    border: 2px solid var(--purple-light);
-    margin-right: 15px;
+    animation: spin 1s linear infinite;
 }
-
-/* --- Animações --- */
-@keyframes slideUp {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes float { 
-    0%, 100% { transform: translateY(0); } 
-    50% { transform: translateY(-10px); } 
-}
-
-/* --- Downbar Fix --- */
-.downbar {
-    position: fixed; bottom: 0; width: 100%; height: 75px;
-    background: rgba(15, 15, 26, 0.95);
-    backdrop-filter: blur(25px);
-    display: flex; justify-content: space-around; align-items: center;
-    border-top: 1px solid var(--glass-border);
-    z-index: 1000;
-}
+@keyframes spin { 100% { transform: rotate(360deg); } }
+    
