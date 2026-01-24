@@ -1,130 +1,131 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;600&family=Poppins:wght@600;700&display=swap');
-
+/* --- Global Variables & Reset (Mantido seu original) --- */
 :root {
-    --bg-gradient: radial-gradient(circle at center, #1e1e2e 0%, #0f0f1a 100%);
-    --glass-bg: rgba(255, 255, 255, 0.03);
-    --glass-border: rgba(123, 31, 162, 0.25);
-    --purple-neon: #bc4eff;
-    --purple-dark: #7b1fa2;
-    --blur: blur(15px);
+    --bg-dark: #0f0f1a;
+    --card-bg: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(123, 31, 162, 0.2);
+    --purple-main: #7b1fa2;
+    --purple-light: #bc4eff;
+    --text-white: #ffffff;
+    --text-grey: #b0b0b0;
+    --danger: #ff4444;
+    --shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+* { 
+    margin: 0; padding: 0; box-sizing: border-box; 
+    -webkit-tap-highlight-color: transparent; 
+}
 
 body {
-    background: var(--bg-gradient);
+    background: radial-gradient(circle at center, #1e1e2e 0%, #0f0f1a 100%);
+    color: var(--text-white);
+    font-family: 'Outfit', sans-serif;
     height: 100vh;
-    color: white;
     overflow: hidden;
     display: flex;
     flex-direction: column;
 }
 
-/* --- Sistema de Telas (O segredo para não bugar) --- */
-.screen {
+/* --- Utility Classes (Essencial para não bugar) --- */
+.hidden { display: none !important; }
+.screen { 
     display: none; 
-    position: fixed; /* Fixa para não rolar a página inteira */
-    inset: 0;
-    padding: 20px;
+    width: 100%; height: 100%; 
+    position: absolute; top: 0; left: 0; 
+    background: transparent; 
     z-index: 10;
-    overflow-y: auto;
+    animation: fadeIn 0.5s ease-out;
 }
-
-.active-flex { display: flex !important; flex-direction: column; align-items: center; justify-content: center; }
+.active-flex { display: flex !important; flex-direction: column; }
 .active { display: block !important; }
 
-/* --- Inputs Modernos (Consertando o que aparece na imagem) --- */
-input[type="text"], textarea {
+/* --- Inputs (Aqui estava o erro da sua imagem) --- */
+input[type="text"], input[type="email"], textarea {
     width: 100%;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--glass-border);
-    border-radius: 12px;
-    padding: 12px 15px;
-    color: white;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: 12px !important;
+    padding: 12px 15px !important;
+    color: white !important;
     margin-bottom: 15px;
     outline: none;
-    transition: 0.3s;
+    font-family: 'Outfit', sans-serif;
 }
 
-input[type="text"]:focus {
-    border-color: var(--purple-neon);
-    background: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 0 15px rgba(188, 78, 255, 0.2);
-}
+input:focus { border-color: var(--purple-light) !important; box-shadow: 0 0 10px rgba(188, 78, 255, 0.2); }
 
-/* --- Containers de Vidro (O Card da Manutenção) --- */
-.login-content, .profile-view-container, .modal-box, .settings-content {
-    background: var(--glass-bg);
-    backdrop-filter: var(--blur);
-    -webkit-backdrop-filter: var(--blur);
-    border: 1px solid var(--glass-border);
-    border-radius: 24px;
-    padding: 30px;
-    width: 100%;
-    max-width: 400px;
-    text-align: center;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-    animation: slideUp 0.5s ease-out;
-    margin: auto; /* Centraliza no flex */
-}
-
-/* --- Botão Estilo "Create" da Imagem --- */
-.btn-primary, #google-login-btn, #confirm-new-chat, .btn-purple {
-    background: var(--purple-dark);
-    color: white;
-    border: none;
-    padding: 15px;
-    border-radius: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
+/* --- Botões (Igual ao Retry da Manutenção) --- */
+.btn-primary, #confirm-new-chat, .btn-retry, #google-login-btn {
+    background: var(--purple-main) !important;
+    color: white !important;
+    border: none !important;
+    padding: 14px 25px !important;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 12px !important;
     cursor: pointer;
-    width: 100%;
-    box-shadow: 0 8px 20px rgba(123, 31, 162, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 1px;
     transition: 0.3s;
+    box-shadow: 0 4px 15px rgba(123, 31, 162, 0.4);
+    width: 100%;
 }
 
-.btn-primary:hover, .btn-purple:hover {
-    background: var(--purple-neon);
-    transform: translateY(-2px);
-    box-shadow: 0 12px 25px rgba(123, 31, 162, 0.6);
-}
+.btn-primary:hover { background: #9c27b0 !important; transform: translateY(-2px); }
 
-/* --- Correção de Modais Sobrepostos --- */
+/* --- Modais (Consertando o empilhamento da imagem) --- */
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(8px);
-    z-index: 1000;
-    display: none; /* Inicia escondido */
-    align-items: center;
+    background: rgba(0, 0, 0, 0.85); /* Escurece o fundo para destacar o card */
+    backdrop-filter: blur(10px);
+    display: flex;
     justify-content: center;
-    padding: 20px;
+    align-items: center;
+    z-index: 3000; /* Aumentado para cobrir tudo */
 }
 
-.modal-overlay:not(.hidden) { display: flex; }
+.modal-box {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(15px);
+    padding: 35px;
+    border-radius: 24px;
+    border: 1px solid var(--glass-border);
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: var(--shadow);
+    animation: slideUp 0.4s ease-out;
+}
 
-/* --- FAB (Botão de Lápis) --- */
+.modal-box h3 {
+    font-family: 'Poppins', sans-serif;
+    color: var(--purple-light);
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+}
+
+/* --- Floating Action Button (Lápis) --- */
 .fab {
     position: fixed;
-    bottom: 95px; right: 25px;
+    bottom: 85px; right: 20px;
     width: 65px; height: 65px;
-    background: var(--purple-dark);
-    border-radius: 20px;
+    background: var(--purple-main);
     color: white;
-    display: flex; align-items: center; justify-content: center;
+    border-radius: 20px;
+    border: none;
     font-size: 1.8rem;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 25px rgba(123, 31, 162, 0.4);
     z-index: 90;
+    display: flex; align-items: center; justify-content: center;
     animation: float 3s ease-in-out infinite;
 }
 
-/* --- Navegação de Baixo --- */
+/* --- Downbar (Glassmorphism) --- */
 .downbar {
     position: fixed;
-    bottom: 0; width: 100%; height: 75px;
-    background: rgba(15, 15, 26, 0.95);
+    bottom: 0; width: 100%; height: 70px;
+    background: rgba(15, 15, 26, 0.85);
     backdrop-filter: blur(20px);
     display: flex; justify-content: space-around; align-items: center;
     border-top: 1px solid var(--glass-border);
@@ -132,11 +133,14 @@ input[type="text"]:focus {
 }
 
 /* --- Animações --- */
-@keyframes slideUp {
-    from { transform: translateY(50px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+@keyframes float { 
+    0%, 100% { transform: translateY(0); } 
+    50% { transform: translateY(-10px); } 
 }
-@keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-12px); }
-}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Mantendo os outros estilos originais para não quebrar */
+.topbar { height: 70px; display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid var(--glass-border); }
+.nav-icon { background: none; border: none; color: var(--text-grey); font-size: 1.8rem; }
+.nav-icon.active { color: var(--purple-light); filter: drop-shadow(0 0 8px var(--purple-light)); }
