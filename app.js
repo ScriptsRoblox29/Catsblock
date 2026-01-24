@@ -83,12 +83,18 @@ const Router = {
     }
 };
 
-// --- AUTENTICAÇÃO ---
+// --- AUTENTICAÇÃO (CORRIGIDO) ---
 onAuthStateChanged(auth, async (user) => {
     const loader = document.getElementById('loading-screen');
     if (user) {
         loader.classList.remove('hidden');
-        await syncUser(user);
+        try {
+            await syncUser(user);
+            // Se chegou aqui, deu tudo certo
+        } catch (e) {
+            // Se as Rules negarem, o erro cai aqui e limpamos o loader
+            console.error("Acesso negado pelas regras:", e);
+        }
         loader.classList.add('hidden');
         Router.go('main-frame');
     } else {
@@ -96,6 +102,7 @@ onAuthStateChanged(auth, async (user) => {
         Router.go('login-frame');
     }
 });
+
 
 document.getElementById('btn-google-login').onclick = () => {
     document.getElementById('login-loader').classList.remove('hidden');
@@ -108,12 +115,12 @@ document.getElementById('btn-google-login').onclick = () => {
 document.getElementById('menu-logout').onclick = () => signOut(auth).then(() => location.reload());
 
 async function syncUser(user) {
-    const refDoc = doc(db, "users", user.uid);
-    let snap = await getDoc(refDoc);
-    
-    if (!snap.exists()) {
-        try {
-            // Transação para gerar Account ID numérico único
+    try {
+        const refDoc = doc(db, "users", user.uid);
+        let snap = await getDoc(refDoc);
+        
+        if (!snap.exists()) {
+            // Transação para gerar Account ID
             await runTransaction(db, async (t) => {
                 const cRef = doc(db, "counters", "users");
                 const cSnap = await t.get(cRef);
@@ -132,11 +139,16 @@ async function syncUser(user) {
                 });
             });
             snap = await getDoc(refDoc);
-        } catch(e) { console.error(e); }
+        }
+        currentUserData = snap.data();
+        applyTheme();
+    } catch (e) {
+        // Se as regras de 61 linhas barrarem o syncUser, 
+        // o erro é capturado aqui e não trava o site.
+        throw e; 
     }
-    currentUserData = snap.data();
-    applyTheme();
 }
+
 
 function applyTheme() {
     if(currentUserData.darkMode) document.body.setAttribute('data-theme', 'dark');
