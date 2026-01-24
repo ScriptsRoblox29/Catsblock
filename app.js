@@ -699,3 +699,23 @@ function stopAndSendAudio() {
     // Parar tracks do microfone para desligar a luz de gravação do navegador
     mediaRecorder.stream.getTracks().forEach(track => track.stop());
 }
+
+// Monitor global de erros de conexão (Firebase/Rede)
+window.addEventListener('unhandledrejection', (event) => {
+    // 1. Faz tudo desaparecer
+    document.querySelectorAll('.frame').forEach(f => f.classList.add('hidden'));
+    
+    // 2. Mostra a mensagem no seu HTML
+    const errorScreen = document.getElementById('error-screen');
+    const errorDetails = document.getElementById('error-details');
+
+    if (errorScreen) {
+        errorScreen.classList.remove('hidden');
+        errorDetails.innerHTML = `
+            Failed to connect to the server.<br>
+            <strong>information:</strong> ${event.reason.message || event.reason}<br>
+            <strong>code:</strong> ${event.reason.code || 'unknown_error'}
+        `;
+    }
+});
+    
