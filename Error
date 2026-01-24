@@ -1,1 +1,105 @@
-401 - Unauthorized, The site denied your authorization.
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Alert</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0d0d0d;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 650px;
+            text-align: center;
+        }
+
+        .icon {
+            font-size: 3rem;
+            color: #ff4d4d;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+
+        .line {
+            width: 50px;
+            height: 2px;
+            background: #ff4d4d;
+            margin: 0 auto 30px;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            line-height: 1.1;
+            margin-bottom: 24px;
+            color: #f2f2f2;
+        }
+
+        p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: #a0a0a0;
+            font-weight: 300;
+            margin-bottom: 40px; /* Espaço para o botão */
+        }
+
+        /* Botão estilizado para combinar com o layout original */
+        .btn-try-again {
+            background: transparent;
+            color: #ff4d4d;
+            border: 1px solid #ff4d4d;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+        }
+
+        .btn-try-again:hover {
+            background: #ff4d4d;
+            color: #0d0d0d;
+            box-shadow: 0 0 20px rgba(255, 77, 77, 0.4);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="icon">!</div>
+        <div class="line"></div>
+        <h1>Sorry, you can't access that right now.</h1>
+        <p>We are experiencing a serious problem with our project and are working to fix the serious flaw. We appreciate your patience. 🙇‍♂️</p>
+        
+        <button class="btn-try-again" onclick="window.location.reload();">
+            Try again
+        </button>
+    </div>
+
+</body>
+</html>
