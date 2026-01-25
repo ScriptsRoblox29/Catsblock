@@ -25,44 +25,26 @@ body {
     color: var(--md-sys-color-on-surface);
     font-family: var(--font-family);
     margin: 0;
-    overflow: hidden;
-    height: 100dvh; /* Usa a altura real do celular, ignorando barras do sistema */
-    width: 100vw;
-    display: flex;
-    justify-content: center;
+    overflow: hidden; /* App-like feel */
+    height: 100vh;
 }
 
+/* Utilitários */
 .hidden { display: none !important; }
-
 .view {
-    position: absolute; /* Mantém seu original */
+    position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
-    max-width: 500px; /* Impede de espalhar no PC */
     background: var(--md-sys-color-background);
-    display: flex; 
-    flex-direction: column;
+    display: flex; flex-direction: column;
     z-index: 1;
-    overflow: hidden; /* Corta o que estiver fora (Privacy/Config) */
 }
 
 .slide-view {
-    position: absolute; /* Fundamental para não deixar o fundo escuro ao fechar */
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: var(--md-sys-color-background);
     z-index: 10;
     transform: translateX(100%);
     transition: transform 0.3s cubic-bezier(0.2, 0.0, 0, 1.0);
 }
-
-.slide-view.active { 
-    transform: translateX(0); 
-}
-
-/* O QUE IMPEDE DE IR PARA BAIXO: */
-.app-content {
-    flex: 1;
-    overflow-y: auto;
-}
+.slide-view.active { transform: translateX(0); }
 
 
 
