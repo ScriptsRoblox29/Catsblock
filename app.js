@@ -39,9 +39,11 @@ function toggleLoading(show) {
 
 // --- AUTENTICAÇÃO ---
 onAuthStateChanged(auth, async (user) => {
+    // 1. SEMPRE mostre o loading assim que o estado mudar
+    toggleLoading(true); 
+
     if (user) {
         currentUser = user;
-        // Criar ou atualizar doc do usuário
         const userRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userRef);
         
@@ -57,15 +59,18 @@ onAuthStateChanged(auth, async (user) => {
             });
         }
         
-        loadProfileUI();
-        loadChats();
+        // 2. Só chama as funções após garantir o usuário
+        await loadProfileUI();
+        await loadChats(); 
         showView('view-app');
     } else {
         currentUser = null;
         showView('view-login');
     }
+    // 3. Só agora você esconde o loading
     toggleLoading(false);
 });
+
 
 document.getElementById('btn-google-login').addEventListener('click', async () => {
     toggleLoading(true);
