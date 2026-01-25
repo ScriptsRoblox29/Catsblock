@@ -50,10 +50,13 @@ body {
 .overlay {
     position: fixed; inset: 0;
     background: var(--md-sys-color-background);
-    display: none; justify-content: center; align-items: center;
+    display: flex; justify-content: center; align-items: center;
     z-index: 999;
+    /* Adicione as linhas abaixo para o controle de visibilidade */
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.4s ease, visibility 0.4s;
 }
-.overlay.active { display: flex; }
 
 .spinner {
     width: 48px; height: 48px;
@@ -62,7 +65,9 @@ body {
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
+
 @keyframes spin { to { transform: rotate(360deg); } }
+
 
 /* Login */
 .login-content {
