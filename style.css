@@ -105,13 +105,13 @@ html, body {
         stroke-dashoffset: 0;
     }
     50% {
-        stroke-dasharray: 90, 150; /* Estica até aqui */
-        stroke-dashoffset: -35;
+        stroke-dasharray: 100, 150; /* A linha estica até aqui */
+        stroke-dashoffset: -35;     /* Começa o deslize */
     }
-    /* O pulo do gato: no 100%, ela tem que encolher DE VOLTA para 1 */
     100% {
+        /* O SEGREDO: Ela volta a ser um ponto (1) enquanto termina o giro (-125) */
         stroke-dasharray: 1, 150; 
-        stroke-dashoffset: -125; /* Encontra o início do próximo ciclo */
+        stroke-dashoffset: -125; 
     }
 }
 
