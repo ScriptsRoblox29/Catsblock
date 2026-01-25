@@ -59,17 +59,27 @@ html, body {
 
 /* --- OVERLAY: FORÇA BRUTA --- */
 /* --- OVERLAY FIXO E CENTRALIZADO --- */
+/* --- OVERLAY CORRIGIDO --- */
 .overlay {
     position: fixed !important;
     inset: 0 !important;
     width: 100vw !important;
     height: 100vh !important;
     background: #121316 !important;
-    display: flex !important;
+    
+    /* Mude de 'flex' para 'none' aqui */
+    display: none !important; 
+    
     justify-content: center !important;
     align-items: center !important;
     z-index: 999999 !important;
 }
+
+/* O overlay só aparece quando o JS adiciona essa classe */
+.overlay.active {
+    display: flex !important;
+}
+
 
 /* --- SPINNER SEM PAUSA --- */
 .android-spinner {
