@@ -89,7 +89,7 @@ html, body {
     stroke-linecap: round;
     fill: none;
     /* Mudamos para linear para o movimento ser contínuo e sem paradas */
-    animation: dash 1.5s linear infinite !important; 
+    animation: dash 2s ease-in-out infinite !important;
     transform-origin: center;
 }
 
@@ -109,10 +109,10 @@ html, body {
     }
     100% {
         stroke-dasharray: 90, 150;
-        /* O segredo está aqui: o valor final precisa fluir para o início */
-        stroke-dashoffset: -125; 
+        stroke-dashoffset: -124; /* O final do ciclo se conecta ao início */
     }
 }
+
 
 
 
