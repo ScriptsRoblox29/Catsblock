@@ -39,37 +39,47 @@ function toggleLoading(show) {
 
 // --- AUTENTICAÇÃO ---
 onAuthStateChanged(auth, async (user) => {
-    // 1. SEMPRE mostre o loading assim que o estado mudar
+    // 1. Inicia o loading
     toggleLoading(true); 
 
-    if (user) {
-        currentUser = user;
-        const userRef = doc(db, "users", user.uid);
-        const userSnap = await getDoc(userRef);
-        
-        if (!userSnap.exists()) {
-            await setDoc(userRef, {
-                uid: user.uid,
-                displayName: user.displayName,
-                email: user.email,
-                photoURL: user.photoURL,
-                description: "Hey there! I am using CatsBlock.",
-                allowNewChats: true,
-                blockedUsers: []
-            });
+    try {
+        if (user) {
+            currentUser = user;
+            const userRef = doc(db, "users", user.uid);
+            const userSnap = await getDoc(userRef);
+            
+            if (!userSnap.exists()) {
+                await setDoc(userRef, {
+                    uid: user.uid,
+                    displayName: user.displayName,
+                    email: user.email,
+                    photoURL: user.photoURL,
+                    description: "Hey there! I am using CatsBlock.",
+                    allowNewChats: true,
+                    blockedUsers: []
+                });
+            }
+            
+            // Carrega a interface
+            await loadProfileUI();
+            await loadChats(); 
+            showView('view-app');
+        } else {
+            currentUser = null;
+            showView('view-login');
         }
-        
-        // 2. Só chama as funções após garantir o usuário
-        await loadProfileUI();
-        await loadChats(); 
-        showView('view-app');
-    } else {
-        currentUser = null;
+    } catch (error) {
+        console.error("Authentication error:", error);
+        // Se der erro, manda para o login para não ficar preso no loading
         showView('view-login');
+    } finally {
+        // 2. O FINALLY garante que o loading suma INDEPENDENTE de erro ou sucesso
+        setTimeout(() => {
+            toggleLoading(false);
+        }, 500); // Um pequeno delay para evitar flickering
     }
-    // 3. Só agora você esconde o loading
-    toggleLoading(false);
 });
+
 
 
 document.getElementById('btn-google-login').addEventListener('click', async () => {
