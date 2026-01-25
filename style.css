@@ -26,45 +26,51 @@ body {
     color: var(--md-sys-color-on-surface);
     font-family: var(--font-family);
     margin: 0;
-    padding: 0;
-    height: 100vh;
+    /* O SEGREDO: usa a altura visual real do celular */
+    height: 100dvh; 
     width: 100vw;
     overflow: hidden;
     display: flex;
-    justify-content: center; /* No PC, isso mantém o app no meio */
+    justify-content: center;
+    position: fixed; /* Impede que o site "role" para baixo da barra do celular */
 }
 
 .view {
-    /* Mudamos de absolute para relative para o PC entender o limite */
-    position: relative; 
-    width: 100%;
-    height: 100%;
-    max-width: 500px; /* Isso impede que no PC o layout estique e "caia" */
-    background: var(--md-sys-color-background);
     display: flex;
     flex-direction: column;
-    z-index: 1;
+    width: 100%;
+    height: 100dvh; /* Dynamic Viewport Height: respeita a barra do Android */
+    max-width: 500px;
+    background: var(--md-sys-color-background);
+    position: relative;
     overflow: hidden;
 }
 
-/* Isso garante que o conteúdo central não empurre a barra para baixo */
+/* Garante que o conteúdo pare ANTES da barra de baixo do celular */
 .app-content {
     flex: 1;
     overflow-y: auto;
+    padding-bottom: env(safe-area-inset-bottom); /* Respeita a área do iPhone/Android */
 }
-
-/* Mantendo seus utilitários exatamente como estão */
-.hidden { display: none !important; }
 
 .slide-view {
-    position: absolute; /* O slide-view PRECISA ser absolute para sobrepor */
-    top: 0; left: 0; width: 100%; height: 100%;
-    z-index: 10;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 100;
     background: var(--md-sys-color-background);
     transform: translateX(100%);
-    transition: transform 0.3s cubic-bezier(0.2, 0.0, 0, 1.0);
+    visibility: hidden;
+    transition: transform 0.3s ease, visibility 0.3s;
 }
-.slide-view.active { transform: translateX(0); }
+
+.slide-view.active {
+    transform: translateX(0);
+    visibility: visible;
+}
+
 
 
 
