@@ -60,10 +60,23 @@ body {
 }
 
 /* A animação do círculo */
+/* Adicione isso ao seu bloco de CSS do Spinner */
 .android-spinner {
+    display: block; /* Garante que o SVG seja tratado como bloco */
     width: 52px;
     height: 52px;
-    animation: rotate 2s linear infinite;
+    margin: auto; /* Centraliza se estiver em um container flex */
+
+    animation: rotate 2s linear infinite; 
+}
+
+/* Garante que o container do chat também centralize o ícone */
+.loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    width: 100%;
 }
 
 .android-spinner circle {
