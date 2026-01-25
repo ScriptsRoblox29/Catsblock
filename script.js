@@ -163,7 +163,12 @@ document.getElementById('toggle-new-chats').addEventListener('change', async (e)
 
 // --- CONVERSAS ---
 function loadChats() {
-    const q = query(collection(db, "chats"), where("participants", "array-contains", currentUser.uid));
+    const q = query(
+        collection(db, "chats"), 
+        where("participants", "array-contains", currentUser.uid),
+        orderBy("createdat", "desc"), 
+        limit(50) 
+    );
     
     onSnapshot(q, (snapshot) => {
         const list = document.getElementById('chats-list');
