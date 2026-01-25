@@ -257,32 +257,43 @@ document.getElementById('btn-back-chat').addEventListener('click', () => {
 });
 
 function loadMessages(chatId) {
-    const q = query(
-        collection(db, "chats", chatId, "messages"),
-        orderBy("timestamp", "asc"), // Trazemos todas e pegamos as ultimas 75 na UI ou limitamos query invertida
-    );
+    // Adicionamos um Try/Catch interno e tratamento de erro no snapshot
+    try {
+        const q = query(
+            collection(db, "chats", chatId, "messages"),
+            orderBy("timestamp", "asc")
+        );
 
-    const container = document.getElementById('messages-container');
-    container.innerHTML = '<div class="spinner" style="margin: auto;"></div>';
+        const container = document.getElementById('messages-container');
+        container.innerHTML = '<div class="spinner" style="margin: auto;"></div>';
 
-    unsubscribeMessages = onSnapshot(q, (snapshot) => {
-        container.innerHTML = ''; // Limpar loader
-        // Pegar apenas as últimas 75
-        const msgs = snapshot.docs.slice(-75);
-        
-        msgs.forEach(doc => {
-            const data = doc.data();
-            const msgDiv = document.createElement('div');
-            const isMe = data.senderId === currentUser.uid;
-            msgDiv.className = `message ${isMe ? 'sent' : 'received'}`;
-            msgDiv.textContent = data.text;
-            container.appendChild(msgDiv);
+        unsubscribeMessages = onSnapshot(q, (snapshot) => {
+            container.innerHTML = ''; 
+            
+            if (snapshot.empty) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:grey;">Say hi! 👋</div>';
+                return;
+            }
+
+            const msgs = snapshot.docs.slice(-75);
+            msgs.forEach(doc => {
+                const data = doc.data();
+                const msgDiv = document.createElement('div');
+                const isMe = data.senderId === currentUser.uid;
+                msgDiv.className = `message ${isMe ? 'sent' : 'received'}`;
+                msgDiv.textContent = data.text;
+                container.appendChild(msgDiv);
+            });
+            container.scrollTop = container.scrollHeight;
+        }, (error) => {
+            console.error("Error in Snapshot:", error);
+            container.innerHTML = '<div style="color:red;">The messages could not be loaded.</div>';
         });
-        
-        // Scroll to bottom
-        container.scrollTop = container.scrollHeight;
-    });
+    } catch (err) {
+        console.error("Error in query:", err);
+    }
 }
+
 
 // Enviar Mensagem
 async function sendMessage() {
