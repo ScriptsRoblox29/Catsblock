@@ -366,3 +366,5 @@ input:checked + .slider:before { transform: translateX(22px); background-color: 
 }
 .center-content { align-items: center; text-align: center; }
     
+/* A LINHA MÁGICA: Adicione apenas isso no final do arquivo */
+.app-content { flex: 1; overflow-y: auto; }
