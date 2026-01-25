@@ -58,41 +58,37 @@ html, body {
 }
 
 /* --- OVERLAY: FORÇA BRUTA --- */
+/* --- OVERLAY FIXO E CENTRALIZADO --- */
 .overlay {
     position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
+    inset: 0 !important;
     width: 100vw !important;
     height: 100vh !important;
-    background-color: #121316 !important;
+    background: #121316 !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
     z-index: 999999 !important;
-    /* Removemos o flex daqui para usar o centro absoluto no filho */
-    display: block !important; 
 }
 
+/* --- SPINNER SEM PAUSA --- */
 .android-spinner {
-    /* CENTRALIZAÇÃO ABSOLUTA */
-    position: absolute !important;
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%) !important; /* O segredo do centro real */
-    
     width: 52px !important;
     height: 52px !important;
-    display: block !important;
     animation: rotate 2s linear infinite !important;
 }
 
 .android-spinner circle {
-    stroke: var(--primary);
+    stroke: var(--md-sys-color-primary) !important;
     stroke-width: 4.5;
     stroke-linecap: round;
     fill: none;
-    /* Mudamos para linear para evitar a "freada" do ease-in-out no final */
-    animation: dash 1.5s linear infinite;
+    /* O segredo da fluidez é o linear para não dar tranco */
+    animation: dash 1.5s linear infinite !important; 
     transform-origin: center;
 }
 
+/* --- KEYFRAMES REFEITOS PARA MOVIMENTO CONTÍNUO --- */
 @keyframes rotate { 
     100% { transform: rotate(360deg); } 
 }
@@ -103,13 +99,13 @@ html, body {
         stroke-dashoffset: 0;
     }
     50% {
-        stroke-dasharray: 100, 150; /* Estica ao máximo */
-        stroke-dashoffset: -35;     /* Desloca a ponta */
+        stroke-dasharray: 100, 150; /* Estica */
+        stroke-dashoffset: -35;
     }
     100% {
-        /* O SEGREDO: Ela encolhe de volta para 1 enquanto termina o trajeto */
+        /* Aqui a linha volta a ser 1 e o offset fecha o ciclo de 360º */
         stroke-dasharray: 1, 150; 
-        stroke-dashoffset: -126; /* Valor exato para fechar o círculo sem pular */
+        stroke-dashoffset: -126; 
     }
 }
 
