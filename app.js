@@ -166,46 +166,42 @@ function formatTime(timestamp) {
 
 // Conversation List
 function initConversationsListener() {
-    // Busca conversas onde eu participo, ordenadas pela última mensagem
+    const list = document.getElementById('conversations-list');
+    const loader = document.getElementById('loading-chats');
+    const noChatsMsg = document.getElementById('no-chats-msg');
+
+    // Consulta simplificada que não exige índice imediato para funcionar
     const q = query(
         collection(db, "conversations"), 
-        where("participants", "array-contains", currentUser.uid), 
-        orderBy("lastMessageTime", "desc")
+        where("participants", "array-contains", currentUser.uid)
     );
     
-    onSnapshot(q, async (snapshot) => {
-        const loader = document.getElementById('loading-chats');
+    onSnapshot(q, (snapshot) => {
         if (loader) loader.classList.add('hidden');
-        
-        const list = document.getElementById('conversations-list');
         list.innerHTML = '';
         
         if (snapshot.empty) {
-            document.getElementById('no-chats-msg').classList.remove('hidden');
+            noChatsMsg.classList.remove('hidden');
             return;
         }
         
-        document.getElementById('no-chats-msg').classList.add('hidden');
+        noChatsMsg.classList.add('hidden');
 
-        // Pegamos os dados do meu perfil uma vez só para checar bloqueados
-        const mySnap = await getDoc(doc(db, "users", currentUser.uid));
-        const myData = mySnap.data();
-        const blockedByMe = myData.blockedUsers || [];
+        // Ordenação manual via código para garantir que funcione no celular
+        const sortedDocs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+            .sort((a, b) => {
+                const timeA = a.lastMessageTime?.seconds || 0;
+                const timeB = b.lastMessageTime?.seconds || 0;
+                return timeB - timeA;
+            });
 
-        snapshot.forEach((docSnap) => {
-            const data = docSnap.data();
+        sortedDocs.forEach((data) => {
             const otherId = data.participants.find(id => id !== currentUser.uid);
-            
-            // Pula se eu bloqueei essa pessoa
-            if (blockedByMe.includes(otherId)) return;
-
-            const li = document.createElement('li');
-            li.className = 'conv-item';
-            
-            // Exibe o nome que está guardado na conversa (mais rápido)
             const displayName = data.displayNames?.[otherId] || "User";
             const unread = data.unreadCount?.[currentUser.uid] || 0;
 
+            const li = document.createElement('li');
+            li.className = 'conv-item';
             li.innerHTML = `
                 <div class="conv-info">
                     <div class="conv-name">${displayName}</div>
@@ -213,14 +209,14 @@ function initConversationsListener() {
                 ${unread > 0 ? `<div class="conv-badge">${unread}</div>` : ''}
             `;
             
-            li.onclick = () => openChat(docSnap.id, otherId, displayName, "");
+            li.onclick = () => openChat(data.id, otherId, displayName, "");
             list.appendChild(li);
         });
     }, (error) => {
-        console.error("Error loading chats:", error);
-        // Se cair aqui, é quase certeza que falta o ÍNDICE no Firebase
+        console.error("Error in firebase:", error);
     });
-}
+    }
+
 
 
 // Create Chat
