@@ -88,8 +88,8 @@ html, body {
     stroke-width: 4.5;
     stroke-linecap: round;
     fill: none;
-    /* Usamos 2s aqui para casar melhor com a rotação */
-    animation: dash 2s ease-in-out infinite !important; 
+    /* Mudamos para linear para o movimento ser contínuo e sem paradas */
+    animation: dash 1.5s linear infinite !important; 
     transform-origin: center;
 }
 
@@ -100,16 +100,17 @@ html, body {
 
 @keyframes dash {
     0% {
-        stroke-dasharray: 10, 150; /* Começa com uma linha pequena, não um ponto */
+        stroke-dasharray: 1, 150;
         stroke-dashoffset: 0;
     }
     50% {
-        stroke-dasharray: 100, 150; /* A linha estica */
-        stroke-dashoffset: -35;     /* Começa a deslizar */
+        stroke-dasharray: 90, 150;
+        stroke-dashoffset: -35;
     }
     100% {
-        stroke-dasharray: 100, 150; /* Mantém esticada no final */
-        stroke-dashoffset: -124;    /* Termina o deslize sem pular */
+        stroke-dasharray: 90, 150;
+        /* O segredo está aqui: o valor final precisa fluir para o início */
+        stroke-dashoffset: -125; 
     }
 }
 
