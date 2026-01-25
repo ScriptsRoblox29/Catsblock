@@ -47,57 +47,54 @@ body {
 .slide-view.active { transform: translateX(0); }
 
 /* Overlay & Spinner */
-/* Overlay - Agora cobrindo tudo com prioridade máxima */
+/* CORREÇÃO DEFINITIVA DO FUNDO E CENTRALIZAÇÃO */
 .overlay {
-    position: fixed; /* Fixa na tela, ignora rolagem e outros frames */
-    top: 0;
-    left: 0;
-    width: 100vw;    /* 100% da largura da janela */
-    height: 100vh;   /* 100% da altura da janela */
-    background: var(--md-sys-color-background);
-    display: flex; 
-    justify-content: center; /* Centraliza horizontalmente */
-    align-items: center;     /* Centraliza verticalmente */
-    z-index: 9999;           /* Fica na frente de ABSOLUTAMENTE tudo */
-    transition: opacity 0.4s ease, visibility 0.4s;
-    pointer-events: all;     /* Bloqueia cliques no que está atrás */
+    position: fixed !important; /* Fixa na tela inteira, ignora outros frames */
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;    /* 100% da largura da JANELA */
+    height: 100vh !important;   /* 100% da altura da JANELA */
+    background-color: #121316 !important; /* Cor sólida para não vazar nada */
+    display: flex !important; 
+    justify-content: center !important; /* Centraliza horizontal no MEIO */
+    align-items: center !important;     /* Centraliza vertical no MEIO */
+    z-index: 999999 !important;         /* Fica na frente de TUDO */
 }
 
-/* Spinner - Garantindo o tamanho e a rotação */
+/* Garante que o ícone tenha tamanho e não seja esmagado */
 .android-spinner {
-    display: block;
-    width: 52px;
-    height: 52px;
-    animation: rotate 2s linear infinite;
+    display: block !important;
+    width: 52px !important;
+    height: 52px !important;
+    animation: rotate 2s linear infinite !important;
 }
 
 .android-spinner circle {
-    stroke: var(--md-sys-color-primary);
+    stroke: var(--md-sys-color-primary) !important;
     stroke-width: 4.5;
     stroke-linecap: round;
     fill: none;
-    animation: dash 1.5s ease-in-out infinite;
+    animation: dash 1.5s ease-in-out infinite !important;
 }
 
-/* Garante que o container do chat também centralize o ícone */
-.loading-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
-    width: 100%;
+/* Bloquear o scroll lateral que está mostrando a tela de Privacy no fundo */
+html, body {
+    overflow: hidden !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    margin: 0 !important;
 }
 
-/* Keyframes necessários */
+/* KEYFRAMES (Mantenha como estão) */
 @keyframes rotate { 
     100% { transform: rotate(360deg); } 
 }
-
 @keyframes dash {
     0% { stroke-dasharray: 1, 150; stroke-dashoffset: 0; }
     50% { stroke-dasharray: 90, 150; stroke-dashoffset: -35; }
     100% { stroke-dasharray: 90, 150; stroke-dashoffset: -124; }
 }
+
 
 
 
