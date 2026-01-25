@@ -26,26 +26,46 @@ body {
     color: var(--md-sys-color-on-surface);
     font-family: var(--font-family);
     margin: 0;
-    overflow: hidden; /* App-like feel */
+    padding: 0;
     height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    display: flex;
+    justify-content: center; /* No PC, isso mantém o app no meio */
 }
 
-/* Utilitários */
-.hidden { display: none !important; }
 .view {
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
+    /* Mudamos de absolute para relative para o PC entender o limite */
+    position: relative; 
+    width: 100%;
+    height: 100%;
+    max-width: 500px; /* Isso impede que no PC o layout estique e "caia" */
     background: var(--md-sys-color-background);
-    display: flex; flex-direction: column;
+    display: flex;
+    flex-direction: column;
     z-index: 1;
+    overflow: hidden;
 }
+
+/* Isso garante que o conteúdo central não empurre a barra para baixo */
+.app-content {
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* Mantendo seus utilitários exatamente como estão */
+.hidden { display: none !important; }
 
 .slide-view {
+    position: absolute; /* O slide-view PRECISA ser absolute para sobrepor */
+    top: 0; left: 0; width: 100%; height: 100%;
     z-index: 10;
+    background: var(--md-sys-color-background);
     transform: translateX(100%);
     transition: transform 0.3s cubic-bezier(0.2, 0.0, 0, 1.0);
 }
 .slide-view.active { transform: translateX(0); }
+
 
 
 /* Overlay & Spinner */
