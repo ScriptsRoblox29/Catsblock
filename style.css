@@ -104,14 +104,16 @@ html, body {
         stroke-dashoffset: 0;
     }
     50% {
-        stroke-dasharray: 90, 150;
+        stroke-dasharray: 100, 150; /* Estica */
         stroke-dashoffset: -35;
     }
     100% {
-        stroke-dasharray: 90, 150;
-        stroke-dashoffset: -124; /* O final do ciclo se conecta ao início */
+        stroke-dasharray: 100, 150;
+        /* Ajustado para -125 para a linha continuar correndo sem o pulo */
+        stroke-dashoffset: -125; 
     }
 }
+
 
 
 
