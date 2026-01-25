@@ -97,7 +97,7 @@ document.getElementById('btn-google-login').addEventListener('click', async () =
 // --- PERFIL & CONFIG ---
 function loadProfileUI() {
     document.getElementById('profile-img').src = currentUser.photoURL;
-    document.getElementById('profile-id').textContent = `ID: ${currentUser.uid.slice(0, 100)}...`; // Encurtado visualmente
+    document.getElementById('profile-id').textContent = `ID: ${currentUser.uid.slice(0, 1000)}...`; // Encurtado visualmente
     
     // Buscar descrição atualizada
     getDoc(doc(db, "users", currentUser.uid)).then(snap => {
