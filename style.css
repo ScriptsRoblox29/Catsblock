@@ -47,38 +47,44 @@ body {
 .slide-view.active { transform: translateX(0); }
 
 /* Overlay & Spinner */
-/* Substitua a antiga .spinner por estas: */
+/* Garante que o fundo cubra a tela e centralize o spinner */
 .overlay {
-    position: fixed; inset: 0;
+    position: fixed;
+    inset: 0;
     background: var(--md-sys-color-background);
-    display: flex; justify-content: center; align-items: center;
-    z-index: 999;
-    opacity: 1;
-    visibility: visible;
+    display: flex; 
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
     transition: opacity 0.4s ease, visibility 0.4s;
 }
 
+/* A animação do círculo */
 .android-spinner {
-    width: 52px; height: 52px;
+    width: 52px;
+    height: 52px;
     animation: rotate 2s linear infinite;
 }
 
 .android-spinner circle {
-    stroke: var(--md-sys-color-primary); /* Roxo da sua paleta */
+    stroke: var(--md-sys-color-primary);
     stroke-width: 4.5;
     stroke-linecap: round;
     fill: none;
     animation: dash 1.5s ease-in-out infinite;
 }
 
-/* Mantenha a @keyframes rotate e adicione a @keyframes dash */
-@keyframes rotate { 100% { transform: rotate(360deg); } }
+/* Keyframes necessários */
+@keyframes rotate { 
+    100% { transform: rotate(360deg); } 
+}
 
 @keyframes dash {
     0% { stroke-dasharray: 1, 150; stroke-dashoffset: 0; }
     50% { stroke-dasharray: 90, 150; stroke-dashoffset: -35; }
     100% { stroke-dasharray: 90, 150; stroke-dashoffset: -124; }
 }
+
 
 
 
