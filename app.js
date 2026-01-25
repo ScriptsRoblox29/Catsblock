@@ -227,7 +227,7 @@ document.getElementById('btn-create-chat').addEventListener('click', async () =>
             [currentUser.uid]: name, // Como eu vejo ele
             [recipientId]: currentUser.displayName // Como ele me vê (padrão)
         },
-        createdAt: new Date()
+        createdat: new Date()
     });
 
     document.getElementById('modal-new-chat').classList.remove('active');
