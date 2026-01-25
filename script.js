@@ -317,15 +317,12 @@ async function sendMessage() {
     const input = document.getElementById('message-input');
     const text = input.value;
     
-    // Validação Regex (apenas dígitos ou espaços vazios)
-    if (!text.trim() || /^\d+$/.test(text)) {
-        // Permitido dígitos, mas não vazio.
-        // A regra diz: "Mensagens com APENAS dígitos OU sem espaços são permitidas".
-        // Interpretando: Se não tiver espaços e for texto normal, ok. Se for só digitos, ok.
-        // Vou assumir a validação padrão de chat: Não enviar string vazia.
-    }
-    
+    // Validação de tamanho e espaços (Regras do Firebase)
     if (text.trim().length === 0) return;
+    if (text.length > 200) {
+        alert("Mensagem muito longa! Máximo de 200 caracteres.");
+        return;
+    }
 
     await addDoc(collection(db, "chats", currentChatId, "messages"), {
         text: text,
@@ -335,6 +332,7 @@ async function sendMessage() {
     
     input.value = "";
 }
+
 
 document.getElementById('btn-send-msg').addEventListener('click', sendMessage);
 
