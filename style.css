@@ -349,3 +349,13 @@ input:checked + .slider:before { transform: translateX(22px); background-color: 
     
 /* A LINHA MÁGICA: Adicione apenas isso no final do arquivo */
 .app-content { flex: 1; overflow-y: auto; }
+
+#profile-id {
+    word-break: break-all;       /* Esta é a linha que faz o ID ir para baixo */
+    white-space: normal;         /* Garante que o texto não tente ficar numa linha só */
+    text-align: center;          /* Mantém o ID alinhado ao centro */
+    padding: 0 20px;             /* Dá um espaço nas laterais para não colar no ecrã */
+    font-size: 14px;             /* Tamanho ideal para IDs longos */
+    margin: 8px 0;
+    color: var(--md-sys-color-on-surface-variant);
+}
