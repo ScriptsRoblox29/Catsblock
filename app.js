@@ -39,7 +39,6 @@ function toggleLoading(show) {
 
 // --- AUTENTICAÇÃO ---
 onAuthStateChanged(auth, async (user) => {
-    // 1. Inicia o loading
     toggleLoading(true); 
 
     try {
@@ -60,9 +59,13 @@ onAuthStateChanged(auth, async (user) => {
                 });
             }
             
-            // Carrega a interface
             await loadProfileUI();
-            await loadChats(); 
+            
+            // --- AQUI ESTAVA O ERRO ---
+            // REMOVA o 'await'. Você quer começar a ouvir os chats, 
+            // mas não quer que o app pare a vida esperando por eles.
+            loadChats(); 
+            
             showView('view-app');
         } else {
             currentUser = null;
@@ -70,13 +73,12 @@ onAuthStateChanged(auth, async (user) => {
         }
     } catch (error) {
         console.error("Authentication error:", error);
-        // Se der erro, manda para o login para não ficar preso no loading
         showView('view-login');
     } finally {
-        // 2. O FINALLY garante que o loading suma INDEPENDENTE de erro ou sucesso
+        // Isso garante que o spinner suma, não importa o que aconteça
         setTimeout(() => {
             toggleLoading(false);
-        }, 500); // Um pequeno delay para evitar flickering
+        }, 600); 
     }
 });
 
