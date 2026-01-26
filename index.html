@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Status</title>
+    <style>
+        :root {
+            --bg-dark: #121316;
+            --surface: #1f1f23;
+            --primary: #d0bcff;
+            --on-primary: #381e72;
+            --text-main: #e6e1e5;
+            --text-sub: #938f99;
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            background-color: var(--bg-dark);
+            font-family: 'Roboto', sans-serif;
+            color: var(--text-main);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Loading Screen overlay */
+        #loader-container {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: var(--bg-dark);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.4s ease, visibility 0.4s;
+        }
+
+        .android-spinner {
+            width: 48px; height: 48px;
+            animation: rotate 2s linear infinite;
+        }
+
+        .android-spinner circle {
+            stroke: var(--primary);
+            stroke-width: 4;
+            stroke-linecap: round;
+            fill: none;
+            animation: dash 1.5s ease-in-out infinite;
+        }
+
+        @keyframes rotate { 100% { transform: rotate(360deg); } }
+        @keyframes dash {
+            0% { stroke-dasharray: 1, 150; stroke-dashoffset: 0; }
+            50% { stroke-dasharray: 90, 150; stroke-dashoffset: -35; }
+            100% { stroke-dasharray: 90, 150; stroke-dashoffset: -124; }
+        }
+
+        /* Container de Telas */
+        .card-container {
+            text-align: center;
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+            display: none; /* Controlado via JS */
+            flex-direction: column;
+            align-items: center;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Back Button - Top Left */
+        #back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: var(--surface);
+            border: none;
+            padding: 12px;
+            border-radius: 16px;
+            cursor: pointer;
+            display: none; /* Só aparece na tela de info */
+        }
+
+        #back-btn svg { fill: var(--primary); width: 24px; height: 24px; }
+
+        .icon-box {
+            background-color: var(--surface);
+            width: 80px; height: 80px;
+            border-radius: 28px;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .icon-box svg { width: 40px; height: 40px; fill: var(--primary); }
+
+        h1 { font-size: 24px; margin-bottom: 12px; font-weight: 400; }
+        p { color: var(--text-sub); font-size: 16px; line-height: 1.5; margin-bottom: 32px; }
+
+        .btn-main {
+            background-color: var(--primary);
+            color: var(--on-primary);
+            border: none;
+            padding: 14px 28px;
+            border-radius: 100px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .link-text {
+            margin-top: 20px;
+            color: var(--primary);
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+            background: none;
+            border: none;
+        }
+
+        .btn-main:active, .link-text:active { transform: scale(0.95); }
+    </style>
+</head>
+<body>
+
+    <button id="back-btn" onclick="navigateTo('error')">
+        <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+    </button>
+
+    <div id="loader-container">
+        <svg class="android-spinner" viewBox="0 0 50 50">
+            <circle cx="25" cy="25" r="20"></circle>
+        </svg>
+    </div>
+
+    <div id="frame-error" class="card-container">
+        <div class="icon-box">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+        </div>
+        <h1>Site unavailable</h1>
+        <p>You can't access that right now.</p>
+        
+        <button class="btn-main" onclick="refreshPage()">Try Again</button>
+        <button class="link-text" onclick="navigateTo('info')">What to do?</button>
+    </div>
+
+    <div id="frame-info" class="card-container">
+        <div class="icon-box">
+            <svg viewBox="0 0 24 24"><path d="M11 17h2v-6h-2v6zm1-15C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM11 9h2V7h-2v2z"/></svg>
+        </div>
+        <h1>Information</h1>
+        <p>Yoo baby 😭🙏 Okay twin, I'll explain, we're having a problem with the design and some issues with our server. We're trying to fix it, and we'll bring this site back online after we fix everything and give you the best possible experience 😂😂 bye twins</p>
+    </div>
+
+    <script>
+        const loader = document.getElementById('loader-container');
+        const frames = {
+            error: document.getElementById('frame-error'),
+            info: document.getElementById('frame-info')
+        };
+        const backBtn = document.getElementById('back-btn');
+
+        // Carregamento Inicial
+        window.addEventListener('load', () => showLoaderThen('error'));
+
+        function showLoaderThen(targetFrame) {
+            loader.style.opacity = '1';
+            loader.style.visibility = 'visible';
+            
+            // Oculta todos os frames
+            Object.values(frames).forEach(f => f.style.display = 'none');
+            backBtn.style.display = 'none';
+
+            setTimeout(() => {
+                loader.style.opacity = '0';
+                loader.style.visibility = 'hidden';
+                
+                frames[targetFrame].style.display = 'flex';
+                
+                // Mostrar botão voltar apenas na tela de info
+                if(targetFrame === 'info') backBtn.style.display = 'block';
+            }, 1200);
+        }
+
+        function navigateTo(frame) {
+            showLoaderThen(frame);
+        }
+
+        function refreshPage() {
+            loader.style.opacity = '1';
+            loader.style.visibility = 'visible';
+            setTimeout(() => window.location.reload(), 500);
+        }
+    </script>
+</body>
+</html>
