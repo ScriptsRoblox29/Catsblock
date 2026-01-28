@@ -280,9 +280,7 @@
         </div>
     </div>
 
-            
- 
-    <script type="module">
+            <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getFirestore, collection, addDoc, onSnapshot, query, where, orderBy, serverTimestamp, doc, updateDoc, getDoc, setDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -305,7 +303,9 @@
     let currentChatId = null;
     let unsubscribeMessages = null;
 
+    // --- OBJETO DE VIEWS ATUALIZADO ---
     const views = {
+        loading: document.getElementById('view-loading'), // Adicionado para correção do frame
         login: document.getElementById('view-login'),
         main: document.getElementById('view-main'),
         chat: document.getElementById('view-chat'),
@@ -337,6 +337,7 @@
 
     // --- NAVEGAÇÃO ---
     function setView(viewId) {
+        // Agora o loading será removido automaticamente se estiver em views
         Object.values(views).forEach(v => v ? v.classList.remove('active') : null);
         if (views[viewId]) views[viewId].classList.add('active');
         if (viewId === 'main' && auth.currentUser) bootstrapApp();
@@ -344,18 +345,14 @@
     window.setView = setView;
     window.navigateBack = () => setView('main');
 
-        // --- AUTH ---
+    // --- AUTH ---
     onAuthStateChanged(auth, (user) => {
-        // Remove o loading assim que o Firebase responder
-        if (views.loading) views.loading.classList.remove('active'); 
-        
         if (user) { 
             setView('main'); 
         } else { 
             setView('login'); 
         }
     });
-        
 
     document.getElementById('google-auth-trigger').onclick = async () => {
         try {
@@ -374,7 +371,7 @@
         const list = document.getElementById('conversations-list');
         const q = query(collection(db, "chats"), where("participants", "array-contains", auth.currentUser.uid));
         onSnapshot(q, (snapshot) => {
-            list.innerHTML = snapshot.empty ? `<div style="text-align:center; padding:60px; color:gray;">No chat found. Create a chat using the pencil icon.</div>` : "";
+            list.innerHTML = snapshot.empty ? `<div style="text-align:center; padding:60px; color:gray;">No conversations.</div>` : "";
             snapshot.forEach(docSnap => {
                 const chatId = docSnap.id;
                 const div = document.createElement('div');
@@ -549,6 +546,6 @@
         this.style.height = 'auto';
         this.style.height = Math.min(this.scrollHeight, 72) + 'px';
     });
-    </script>
-    <body>
-        <html>
+            </script>
+            <body>
+                <html>
