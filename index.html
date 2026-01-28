@@ -344,10 +344,18 @@
     window.setView = setView;
     window.navigateBack = () => setView('main');
 
-    // --- AUTH ---
+        // --- AUTH ---
     onAuthStateChanged(auth, (user) => {
-        if (user) { setView('main'); } else { setView('login'); }
+        // Remove o loading assim que o Firebase responder
+        if (views.loading) views.loading.classList.remove('active'); 
+        
+        if (user) { 
+            setView('main'); 
+        } else { 
+            setView('login'); 
+        }
     });
+        
 
     document.getElementById('google-auth-trigger').onclick = async () => {
         try {
@@ -366,7 +374,7 @@
         const list = document.getElementById('conversations-list');
         const q = query(collection(db, "chats"), where("participants", "array-contains", auth.currentUser.uid));
         onSnapshot(q, (snapshot) => {
-            list.innerHTML = snapshot.empty ? `<div style="text-align:center; padding:60px; color:gray;">No conversations.</div>` : "";
+            list.innerHTML = snapshot.empty ? `<div style="text-align:center; padding:60px; color:gray;">No chat found. Create a chat using the pencil icon.</div>` : "";
             snapshot.forEach(docSnap => {
                 const chatId = docSnap.id;
                 const div = document.createElement('div');
