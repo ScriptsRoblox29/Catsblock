@@ -281,7 +281,8 @@
     </div>
 
             
-            <script type="module">
+ 
+    <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getFirestore, collection, addDoc, onSnapshot, query, where, orderBy, serverTimestamp, doc, updateDoc, getDoc, setDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -305,7 +306,6 @@
     let unsubscribeMessages = null;
 
     const views = {
-        loading: document.getElementById('view-loading'),
         login: document.getElementById('view-login'),
         main: document.getElementById('view-main'),
         chat: document.getElementById('view-chat'),
@@ -314,45 +314,63 @@
         settings: document.getElementById('view-settings')
     };
 
+    // --- SISTEMA DE DATA DINÂMICA ---
     function formatChatTime(timestamp) {
         if (!timestamp) return "Sending...";
         const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
         const HH = String(date.getHours()).padStart(2, '0');
         const mm = String(date.getMinutes()).padStart(2, '0');
-        return `${mm}:${HH}`; // Simplificado para performance
+        const DD = String(date.getDate()).padStart(2, '0');
+        const MM = String(date.getMonth() + 1).padStart(2, '0');
+        const YY = String(date.getFullYear()).slice(-2);
+
+        if (diffMs < 60000) return "Now";
+        if (diffDays < 1) return `${HH}:${mm}`;
+        if (diffDays < 30) return `${HH}:${mm}:${DD}`;
+        if (diffDays < 365) return `${HH}:${mm}:${DD}:${MM}`;
+        return `${DD}:${MM}:${YY}`;
     }
 
+    // --- NAVEGAÇÃO ---
     function setView(viewId) {
-        Object.values(views).forEach(v => v.classList.remove('active'));
+        Object.values(views).forEach(v => v ? v.classList.remove('active') : null);
         if (views[viewId]) views[viewId].classList.add('active');
         if (viewId === 'main' && auth.currentUser) bootstrapApp();
     }
     window.setView = setView;
     window.navigateBack = () => setView('main');
 
+    // --- AUTH ---
     onAuthStateChanged(auth, (user) => {
         if (user) { setView('main'); } else { setView('login'); }
     });
 
     document.getElementById('google-auth-trigger').onclick = async () => {
-        const result = await signInWithPopup(auth, provider);
-        await setDoc(doc(db, "users", result.user.uid), {
-            name: result.user.displayName,
-            photoURL: result.user.photoURL,
-            acceptingRequests: true,
-            blockedList: []
-        }, { merge: true });
+        try {
+            const result = await signInWithPopup(auth, provider);
+            await setDoc(doc(db, "users", result.user.uid), {
+                name: result.user.displayName,
+                photoURL: result.user.photoURL,
+                acceptingRequests: true,
+                blockedList: []
+            }, { merge: true });
+        } catch (err) { console.error(err); }
     };
 
+    // --- LISTA DE CONVERSAS ---
     async function bootstrapApp() {
         const list = document.getElementById('conversations-list');
         const q = query(collection(db, "chats"), where("participants", "array-contains", auth.currentUser.uid));
         onSnapshot(q, (snapshot) => {
-            list.innerHTML = ""; // Limpa o efeito de loading
+            list.innerHTML = snapshot.empty ? `<div style="text-align:center; padding:60px; color:gray;">No conversations.</div>` : "";
             snapshot.forEach(docSnap => {
                 const chatId = docSnap.id;
                 const div = document.createElement('div');
-                div.className = 'skeleton-item'; // Mantém sua classe visual
+                div.className = 'skeleton-item';
                 div.style.padding = '15px'; div.style.cursor = 'pointer';
                 div.innerHTML = `<strong>Chat: ${chatId.substring(0,8)}...</strong>`;
                 div.onclick = () => openChat(chatId);
@@ -361,6 +379,7 @@
         });
     }
 
+    // --- CHAT ENGINE ---
     window.openChat = async (chatId) => {
         currentChatId = chatId;
         const chatSnap = await getDoc(doc(db, "chats", chatId));
@@ -377,26 +396,29 @@
     function listenForMessages(chatId) {
         if (unsubscribeMessages) unsubscribeMessages();
         const q = query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc"));
-        
-        // Otimizado: Só adiciona o que mudou, não apaga tudo
         unsubscribeMessages = onSnapshot(q, (snapshot) => {
             snapshot.docChanges().forEach((change) => {
+                const data = change.doc.data();
+                const msgId = change.doc.id;
                 if (change.type === "added") {
-                    const data = change.doc.data();
-                    const mode = data.sender === auth.currentUser.uid ? 'sent' : 'received';
-                    renderBubble(data, mode);
+                    renderBubble(data, msgId);
+                } else if (change.type === "modified") {
+                    const timeDiv = document.querySelector(`[data-id="${msgId}"] .msg-time`);
+                    if (timeDiv) timeDiv.innerText = formatChatTime(data.createdAt);
                 }
             });
         });
     }
 
-    function renderBubble(data, mode) {
+    function renderBubble(data, msgId) {
         const scroller = document.getElementById('chat-scroller');
+        const mode = data.sender === auth.currentUser.uid ? 'sent' : 'received';
         const row = document.createElement('div');
         row.className = `message-row row-${mode}`;
+        row.setAttribute('data-id', msgId);
         row.innerHTML = `
             <div class="bubble ${mode}">${data.content}</div>
-            <div class="msg-time" style="font-size:10px; color:gray;">${formatChatTime(data.createdAt)}</div>
+            <div class="msg-time">${formatChatTime(data.createdAt)}</div>
         `;
         scroller.appendChild(row);
         scroller.scrollTop = scroller.scrollHeight;
@@ -405,28 +427,65 @@
     window.postMessage = async () => {
         const textarea = document.getElementById('main-textarea');
         const text = textarea.value.trim();
-        if (text === "" || !currentChatId) return;
-
-        textarea.value = "";
-        textarea.style.height = 'auto';
-
+        if (!text || !currentChatId) return;
+        textarea.value = ""; textarea.style.height = 'auto';
         try {
             await addDoc(collection(db, "chats", currentChatId, "messages"), {
                 content: text,
                 sender: auth.currentUser.uid,
                 createdAt: serverTimestamp()
             });
-        } catch (e) { alert("Failed to send."); }
+        } catch (e) { alert("Error sending message."); }
     };
     document.getElementById('btn-send').onclick = window.postMessage;
 
-    // --- CONFIGURAÇÕES (CORRIGIDO) ---
+    // --- BLOQUEIO E CONFIGS ---
+    window.handleUserBlock = async () => {
+        if (!currentActiveContactId) return;
+        const myUid = auth.currentUser.uid;
+        const snap = await getDoc(doc(db, "users", myUid));
+        const blockedList = snap.data().blockedList || [];
+
+        if (blockedList.includes(currentActiveContactId)) {
+            alert(`You've already blocked this person. To unblock them, go to Profile > Settings and unblock the userid.`);
+            window.toggleBlockModal(false);
+            return;
+        }
+
+        await updateDoc(doc(db, "users", myUid), { blockedList: arrayUnion(currentActiveContactId) });
+        alert("User blocked.");
+        window.toggleBlockModal(false);
+        setView('main');
+    };
+
     window.openSettings = async () => {
         const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
         const data = snap.data();
         const toggle = document.getElementById('toggle-requests');
         data.acceptingRequests ? toggle.classList.add('active') : toggle.classList.remove('active');
+        
+        const container = document.getElementById('blocked-list-container');
+        container.innerHTML = "";
+        for (const uid of (data.blockedList || [])) {
+            const uSnap = await getDoc(doc(db, "users", uid));
+            const uData = uSnap.data();
+            const div = document.createElement('div');
+            div.style = "display:flex; align-items:center; justify-content:space-between; padding:10px; background:#f9f9f9; margin-bottom:8px; border-radius:12px;";
+            div.innerHTML = `
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <img src="${uData?.photoURL}" style="width:35px; height:35px; border-radius:50%;">
+                    <div style="font-size:11px;"><b>${uData?.name || 'User'}</b><br>${uid}</div>
+                </div>
+                <button onclick="unblockUser('${uid}')" style="color:#ff3b30; border:none; background:none; font-weight:600; cursor:pointer;">Unblock</button>
+            `;
+            container.appendChild(div);
+        }
         setView('settings');
+    };
+
+    window.unblockUser = async (uid) => {
+        await updateDoc(doc(db, "users", auth.currentUser.uid), { blockedList: arrayRemove(uid) });
+        window.openSettings();
     };
 
     window.toggleAcceptRequests = async () => {
@@ -434,6 +493,24 @@
         const newState = !toggle.classList.contains('active');
         await updateDoc(doc(db, "users", auth.currentUser.uid), { acceptingRequests: newState });
         toggle.classList.toggle('active');
+    };
+
+    // --- PERFIL E CONTATO ---
+    window.openUserProfile = async () => {
+        const myUid = auth.currentUser.uid;
+        const snap = await getDoc(doc(db, "users", myUid));
+        document.getElementById('my-profile-id').innerText = myUid;
+        document.getElementById('my-profile-name').innerText = snap.data().name;
+        document.getElementById('my-profile-img').src = auth.currentUser.photoURL;
+        document.getElementById('my-profile-bio').value = snap.data().bio || "";
+        setView('myProfile');
+    };
+
+    window.saveMyBio = async () => {
+        const bio = document.getElementById('my-profile-bio').value;
+        if(bio.length > 50) return alert("Max 50 chars.");
+        await updateDoc(doc(db, "users", auth.currentUser.uid), { bio: bio });
+        alert("Bio updated!");
     };
 
     window.openContactInfo = async () => {
@@ -447,32 +524,23 @@
         setView('contactInfo');
     };
 
-    // Restante (Profile, Modal, Textarea) permanece igual ao seu original.
-    window.openUserProfile = async () => {
-        const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
-        const data = snap.data();
-        document.getElementById('my-profile-img').src = auth.currentUser.photoURL;
-        document.getElementById('my-profile-name').innerText = data.name;
-        document.getElementById('my-profile-bio').value = data.bio || "";
-        setView('myProfile');
-    };
-
     window.openNewConversation = async () => {
-        const targetId = prompt("User ID:");
+        const targetId = prompt("Enter User ID:");
         if(!targetId || targetId === auth.currentUser.uid) return;
         const userSnap = await getDoc(doc(db, "users", targetId));
         if(!userSnap.exists() || !userSnap.data().acceptingRequests) return alert("User not accepting requests.");
         const chatId = auth.currentUser.uid < targetId ? `${auth.currentUser.uid}_${targetId}` : `${targetId}_${auth.currentUser.uid}`;
-        await setDoc(doc(db, "chats", chatId), { participants: [auth.currentUser.uid, targetId] }, { merge: true });
+        await setDoc(doc(db, "chats", chatId), { participants: [auth.currentUser.uid, targetId], createdAt: serverTimestamp() }, { merge: true });
         openChat(chatId);
     };
 
     window.toggleBlockModal = (show) => document.getElementById('modal-block').style.display = show ? 'flex' : 'none';
+
     const textarea = document.getElementById('main-textarea');
     textarea.addEventListener('input', function() {
         this.style.height = 'auto';
         this.style.height = Math.min(this.scrollHeight, 72) + 'px';
     });
-            </script>
-        <body>
-    <html>
+    </script>
+    <body>
+        <html>
