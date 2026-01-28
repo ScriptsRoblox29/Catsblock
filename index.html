@@ -519,32 +519,40 @@
     const toggle = document.getElementById('toggle-requests');
     if (!toggle) return;
 
-    // Pega o estado atual baseado na classe visual
+    // 1. Pegamos o estado oposto ao que está na tela agora
     const isCurrentlyActive = toggle.classList.contains('active');
-    const newState = !isCurrentlyActive; // Inverte o estado
+    const newState = !isCurrentlyActive;
+
+    // 2. Feedback visual de "processando"
+    toggle.style.opacity = "0.5";
+    toggle.style.pointerEvents = "none";
 
     try {
-        // 1. Tenta atualizar no Firebase primeiro
-        await updateDoc(doc(db, "users", auth.currentUser.uid), { 
+        const userRef = doc(db, "users", auth.currentUser.uid);
+        
+        // 3. Grava no Firebase
+        await updateDoc(userRef, { 
             acceptingRequests: newState 
         });
 
-        // 2. Se o Firebase aceitou, aí sim mudamos o visual
+        // 4. SÓ MUDA O VISUAL APÓS A CONFIRMAÇÃO DO SUCESSO
         if (newState) {
             toggle.classList.add('active');
         } else {
             toggle.classList.remove('active');
         }
         
-        console.log("Configuração salva com sucesso:", newState);
+        console.log("Firebase updated for:", newState);
     } catch (e) {
-        // Se cair aqui, o Firebase recusou (provavelmente por causa das Rules)
-        console.error("Erro ao salvar no Firebase:", e);
-        alert("Erro de permissão: O botão não pôde ser salvo.");
-        
-        // Mantém o visual antigo já que falhou
+        console.error("Unknown error, Send this error to the TikToker fmafioso:", e);
+        alert("Error. Send this error to the TikToker fmafioso");
+    } finally {
+        // 5. Restaura o botão
+        toggle.style.opacity = "1";
+        toggle.style.pointerEvents = "auto";
     }
 };
+                            
 
     // --- PERFIL E CONTATO ---
     window.openUserProfile = async () => {
