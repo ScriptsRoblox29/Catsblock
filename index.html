@@ -281,7 +281,7 @@
     </div>
 
             
-                        <script type="module">
+                                                    <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, where, orderBy, serverTimestamp, doc, updateDoc, getDoc, setDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -300,9 +300,8 @@
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
-        // --- GLOBAL VARIABLES ---
         let currentActiveContactId = null;
-        let currentChatId = null; 
+        let currentChatId = null;
         let unsubscribeMessages = null;
 
         const views = {
@@ -317,10 +316,13 @@
 
         function setView(viewId) {
             Object.values(views).forEach(v => v.classList.remove('active'));
-            views[viewId].classList.add('active');
-            if (viewId === 'main' && auth.currentUser) { bootstrapApp(); }
+            if (views[viewId]) views[viewId].classList.add('active');
+            if (viewId === 'main' && auth.currentUser) bootstrapApp();
         }
+        window.setView = setView;
+        window.navigateBack = () => setView('main');
 
+        // --- AUTH LOGIC ---
         document.getElementById('google-auth-trigger').onclick = async () => {
             try { 
                 const result = await signInWithPopup(auth, provider);
@@ -333,11 +335,76 @@
                     acceptingRequests: true,
                     blockedList: []
                 }, { merge: true });
-            } 
-            catch (err) { console.error("Login Error:", err); }
+            } catch (err) { console.error("Login Error:", err); }
         };
 
-        onAuthStateChanged(auth, (user) => { if (user) { bootstrapApp(); setView('main'); } else { setView('login'); } });
+        onAuthStateChanged(auth, (user) => { if (user) { setView('main'); } else { setView('login'); } });
+
+        // --- MAIN LIST (CONVERSATIONS) ---
+        async function bootstrapApp() {
+            const list = document.getElementById('conversations-list');
+            const q = query(collection(db, "chats"), where("participants", "array-contains", auth.currentUser.uid));
+
+            onSnapshot(q, (snapshot) => {
+                list.innerHTML = snapshot.empty ? `<div style="text-align:center; padding:60px; color:var(--ios-grey);">No conversations found. Click the pencil icon!</div>` : "";
+                snapshot.forEach(docSnap => {
+                    const chatId = docSnap.id;
+                    const item = document.createElement('div');
+                    item.className = 'skeleton-item';
+                    item.style.display = 'flex'; item.style.alignItems = 'center'; item.style.padding = '15px'; item.style.cursor = 'pointer';
+                    item.innerHTML = `<strong>Chat: ${chatId.substring(0, 8)}...</strong>`;
+                    item.onclick = () => openChat(chatId);
+                    list.appendChild(item);
+                });
+            });
+        }
+
+        // --- CHAT LOGIC ---
+        window.openChat = async (chatId) => {
+            currentChatId = chatId;
+            const chatSnap = await getDoc(doc(db, "chats", chatId));
+            const participants = chatSnap.data().participants;
+            currentActiveContactId = participants.find(p => p !== auth.currentUser.uid);
+            
+            const contactSnap = await getDoc(doc(db, "users", currentActiveContactId));
+            document.getElementById('chat-contact-name').innerText = contactSnap.data().name;
+            
+            document.getElementById('chat-scroller').innerHTML = ""; 
+            setView('chat');
+            listenForMessages(chatId);
+        };
+
+        function listenForMessages(chatId) {
+            if (unsubscribeMessages) unsubscribeMessages();
+            const q = query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc"));
+            unsubscribeMessages = onSnapshot(q, (snapshot) => {
+                const scroller = document.getElementById('chat-scroller');
+                scroller.innerHTML = "";
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    const mode = data.sender === auth.currentUser.uid ? 'sent' : 'received';
+                    const row = document.createElement('div');
+                    row.className = `message-row row-${mode}`;
+                    row.innerHTML = `<div class="bubble ${mode}">${data.content}</div>`;
+                    scroller.appendChild(row);
+                });
+                scroller.scrollTop = scroller.scrollHeight;
+            });
+        }
+
+        async function postMessage() {
+            const textarea = document.getElementById('main-textarea');
+            const text = textarea.value.trim();
+            if (text === "" || !currentChatId) return;
+            await addDoc(collection(db, "chats", currentChatId, "messages"), {
+                content: text,
+                sender: auth.currentUser.uid,
+                createdAt: serverTimestamp()
+            });
+            textarea.value = "";
+            textarea.style.height = 'auto';
+        }
+        document.getElementById('btn-send').onclick = postMessage;
 
         // --- SETTINGS LOGIC ---
         window.openSettings = async () => {
@@ -345,8 +412,7 @@
             const snap = await getDoc(doc(db, "users", user.uid));
             const data = snap.data();
             const toggle = document.getElementById('toggle-requests');
-            if(data.acceptingRequests) toggle.classList.add('active');
-            else toggle.classList.remove('active');
+            data.acceptingRequests ? toggle.classList.add('active') : toggle.classList.remove('active');
             renderBlockedList(data.blockedList || []);
             setView('settings');
         };
@@ -364,34 +430,31 @@
             for (const uid of list) {
                 const uSnap = await getDoc(doc(db, "users", uid));
                 if (!uSnap.exists()) continue;
-                const uData = uSnap.data();
                 const div = document.createElement('div');
                 div.className = 'blocked-user-card';
-                div.innerHTML = `<img src="${uData.photoURL}" class="blocked-img"><div style="text-align: left;"><div style="font-weight: 600; font-size: 14px;">${uData.name}</div><div style="font-size: 11px; color: var(--ios-grey);">${uid}</div></div><button class="unblock-btn" onclick="handleUnblock('${uid}')">Unblock</button>`;
+                div.innerHTML = `<img src="${uSnap.data().photoURL}" class="blocked-img"><div><div style="font-weight:600;">${uSnap.data().name}</div></div><button class="unblock-btn" onclick="handleUnblock('${uid}')">Unblock</button>`;
                 container.appendChild(div);
             }
         }
 
         window.handleUnblock = async (uid) => {
             await updateDoc(doc(db, "users", auth.currentUser.uid), { blockedList: arrayRemove(uid) });
-            openSettings(); 
+            openSettings();
         };
 
-        // --- PROFILE & CONTACT LOGIC ---
+        // --- PROFILE & BLOCKING ---
         window.openUserProfile = async () => {
-            const user = auth.currentUser;
-            const snap = await getDoc(doc(db, "users", user.uid));
+            const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
             const data = snap.data();
-            document.getElementById('my-profile-img').src = user.photoURL;
+            document.getElementById('my-profile-img').src = auth.currentUser.photoURL;
             document.getElementById('my-profile-name').innerText = data.name;
-            document.getElementById('my-profile-id').innerText = user.uid;
+            document.getElementById('my-profile-id').innerText = auth.currentUser.uid;
             document.getElementById('my-profile-bio').value = data.bio || "";
             setView('myProfile');
         };
 
         window.saveMyBio = async () => {
-            const newBio = document.getElementById('my-profile-bio').value;
-            await updateDoc(doc(db, "users", auth.currentUser.uid), { bio: newBio });
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { bio: document.getElementById('my-profile-bio').value });
             alert("Bio updated!");
         };
 
@@ -399,112 +462,43 @@
             if(!currentActiveContactId) return;
             const snap = await getDoc(doc(db, "users", currentActiveContactId));
             const data = snap.data();
-            document.getElementById('info-profile-img').src = data.photoURL || "";
+            document.getElementById('info-profile-img').src = data.photoURL;
             document.getElementById('info-profile-name').innerText = data.name;
             document.getElementById('info-profile-id').innerText = currentActiveContactId;
             document.getElementById('info-profile-bio').innerText = data.bio || "No description.";
             setView('contactInfo');
         };
 
-        // --- CHAT CORE LOGIC ---
-        async function bootstrapApp() {
-            const list = document.getElementById('conversations-list');
-            const user = auth.currentUser;
-            const q = query(collection(db, "chats"), where("participants", "array-contains", user.uid));
-            onSnapshot(q, (snapshot) => {
-                list.innerHTML = snapshot.empty ? `<div style="text-align:center; padding:60px; color:var(--ios-grey);">No conversations found.</div>` : "";
-                snapshot.forEach(docSnap => {
-                    const chatId = docSnap.id;
-                    const div = document.createElement('div');
-                    div.className = 'skeleton-item';
-                    div.style.padding = '15px'; div.style.cursor = 'pointer';
-                    div.innerHTML = `<strong>Chat: ${chatId.substring(0,8)}...</strong>`;
-                    div.onclick = () => openChat(chatId);
-                    list.appendChild(div);
-                });
-            });
-        }
-
-        window.openChat = (chatId) => {
-            currentChatId = chatId;
-            document.getElementById('chat-scroller').innerHTML = ""; 
-            setView('chat');
-            listenForMessages(chatId);
-        };
-
-        function listenForMessages(chatId) {
-            if (unsubscribeMessages) unsubscribeMessages();
-            const q = query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc"));
-            unsubscribeMessages = onSnapshot(q, (snapshot) => {
-                const scroller = document.getElementById('chat-scroller');
-                scroller.innerHTML = "";
-                snapshot.forEach(docSnap => {
-                    const data = docSnap.data();
-                    const mode = data.sender === auth.currentUser.uid ? 'sent' : 'received';
-                    renderBubble(data, mode);
-                });
-            });
-        }
-
-        function renderBubble(data, mode) {
-            const scroller = document.getElementById('chat-scroller');
-            const row = document.createElement('div');
-            row.className = `message-row row-${mode}`;
-            row.innerHTML = `<div class="bubble ${mode}">${data.content}</div>`;
-            scroller.appendChild(row);
-            scroller.scrollTop = scroller.scrollHeight;
-        }
-
-        async function postMessage() {
-            const textarea = document.getElementById('main-textarea');
-            const rawText = textarea.value.trim();
-            const user = auth.currentUser;
-            if (rawText.length < 1 || !currentChatId) return;
-            try {
-                await addDoc(collection(db, "chats", currentChatId, "messages"), {
-                    content: rawText,
-                    sender: user.uid,
-                    createdAt: serverTimestamp()
-                });
-                textarea.value = "";
-                textarea.style.height = 'auto';
-            } catch (e) { console.error(e); }
-        }
-
         window.openNewConversation = async () => {
             const targetId = prompt("Enter User ID:");
             if(!targetId || targetId === auth.currentUser.uid) return;
-            try {
-                const userSnap = await getDoc(doc(db, "users", targetId));
-                if(!userSnap.exists()) return alert("User not found.");
-                const myId = auth.currentUser.uid;
-                const chatId = myId < targetId ? `${myId}_${targetId}` : `${targetId}_${myId}`;
-                await setDoc(doc(db, "chats", chatId), {
-                    participants: [myId, targetId],
-                    createdAt: serverTimestamp()
-                }, { merge: true });
-                currentActiveContactId = targetId;
-                document.getElementById('chat-contact-name').innerText = userSnap.data().name;
-                openChat(chatId);
-            } catch (err) { alert("Error connecting."); }
+            const userSnap = await getDoc(doc(db, "users", targetId));
+            if(!userSnap.exists()) return alert("User not found.");
+            const userData = userSnap.data();
+            if(userData.acceptingRequests === false) return alert("User not accepting requests.");
+            if(userData.blockedList?.includes(auth.currentUser.uid)) return alert("You are blocked.");
+
+            const chatId = auth.currentUser.uid < targetId ? `${auth.currentUser.uid}_${targetId}` : `${targetId}_${auth.currentUser.uid}`;
+            await setDoc(doc(db, "chats", chatId), { participants: [auth.currentUser.uid, targetId], createdAt: serverTimestamp() }, { merge: true });
+            openChat(chatId);
         };
 
         window.handleUserBlock = async () => {
             if(!currentActiveContactId) return;
             await updateDoc(doc(db, "users", auth.currentUser.uid), { blockedList: arrayUnion(currentActiveContactId) });
+            alert("User blocked.");
+            window.toggleBlockModal(false);
             setView('main');
         };
 
-        // --- UI EVENTS ---
-        document.getElementById('btn-send').onclick = postMessage;
-        window.navigateBack = () => setView('main');
         window.toggleBlockModal = (show) => document.getElementById('modal-block').style.display = show ? 'flex' : 'none';
-        
+
         const textarea = document.getElementById('main-textarea');
         textarea.addEventListener('input', function() {
             this.style.height = 'auto';
             this.style.height = Math.min(this.scrollHeight, 72) + 'px';
         });
-                        </script>
+                                                    </script>
+    
 <body>
     <html>
