@@ -516,11 +516,35 @@
     };
 
     window.toggleAcceptRequests = async () => {
-        const toggle = document.getElementById('toggle-requests');
-        const newState = !toggle.classList.contains('active');
-        await updateDoc(doc(db, "users", auth.currentUser.uid), { acceptingRequests: newState });
-        toggle.classList.toggle('active');
-    };
+    const toggle = document.getElementById('toggle-requests');
+    if (!toggle) return;
+
+    // Pega o estado atual baseado na classe visual
+    const isCurrentlyActive = toggle.classList.contains('active');
+    const newState = !isCurrentlyActive; // Inverte o estado
+
+    try {
+        // 1. Tenta atualizar no Firebase primeiro
+        await updateDoc(doc(db, "users", auth.currentUser.uid), { 
+            acceptingRequests: newState 
+        });
+
+        // 2. Se o Firebase aceitou, aí sim mudamos o visual
+        if (newState) {
+            toggle.classList.add('active');
+        } else {
+            toggle.classList.remove('active');
+        }
+        
+        console.log("Configuração salva com sucesso:", newState);
+    } catch (e) {
+        // Se cair aqui, o Firebase recusou (provavelmente por causa das Rules)
+        console.error("Erro ao salvar no Firebase:", e);
+        alert("Erro de permissão: O botão não pôde ser salvo.");
+        
+        // Mantém o visual antigo já que falhou
+    }
+};
 
     // --- PERFIL E CONTATO ---
     window.openUserProfile = async () => {
