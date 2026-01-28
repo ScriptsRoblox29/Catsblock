@@ -481,7 +481,7 @@
             const uSnap = await getDoc(doc(db, "users", uid));
             const uData = uSnap.data();
             const div = document.createElement('div');
-            div.style = "display:flex; align-items:center; justify-content:space-between; padding:10px; background:#f9f9f9; margin-bottom:8px; border-radius:12px;";
+            div.style = "display:flex; align-items:center; justify-content:space-between; padding:10px; background:#2c2c2c; color:white; margin-bottom:8px; border-radius:12px;";
             div.innerHTML = `
                 <div style="display:flex; align-items:center; gap:10px;">
                     <img src="${uData?.photoURL}" style="width:35px; height:35px; border-radius:50%;">
