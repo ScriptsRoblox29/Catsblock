@@ -335,13 +335,19 @@
         return `${DD}:${MM}:${YY}`;
     }
 
-    // --- NAVEGAÇÃO ---
+        // --- NAVEGAÇÃO CORRIGIDA ---
     function setView(viewId) {
-        // Agora o loading será removido automaticamente se estiver em views
-        Object.values(views).forEach(v => v ? v.classList.remove('active') : null);
-        if (views[viewId]) views[viewId].classList.add('active');
+        // Força a remoção de 'active' de TODOS os elementos que possuam essa classe no HTML
+        document.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
+        
+        // Ativa a view desejada através do objeto views
+        if (views[viewId]) {
+            views[viewId].classList.add('active');
+        }
+        
         if (viewId === 'main' && auth.currentUser) bootstrapApp();
     }
+                
     window.setView = setView;
     window.navigateBack = () => setView('main');
 
