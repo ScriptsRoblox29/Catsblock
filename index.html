@@ -335,18 +335,30 @@
         return `${DD}:${MM}:${YY}`;
     }
 
-        // --- NAVEGAÇÃO CORRIGIDA ---
-    function setView(viewId) {
-        // Força a remoção de 'active' de TODOS os elementos que possuam essa classe no HTML
-        document.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
-        
-        // Ativa a view desejada através do objeto views
-        if (views[viewId]) {
-            views[viewId].classList.add('active');
+function setView(viewId) {
+    // 1. Limpeza Seletiva:
+    // Percorremos apenas os elementos das telas (main, settings, chat, etc)
+    // Isso garante que o botão 'toggle-requests' NÃO perca a classe 'active' 
+    // quando você mudar de tela.
+    Object.values(views).forEach(el => {
+        if (el) {
+            el.classList.remove('active');
         }
-        
-        if (viewId === 'main' && auth.currentUser) bootstrapApp();
+    });
+    
+    // 2. Ativação da tela desejada:
+    if (views[viewId]) {
+        views[viewId].classList.add('active');
+    } else {
+        console.warn(`The view "${viewId}" not found`);
     }
+    
+    // 3. Inicialização se for a tela principal:
+    if (viewId === 'main' && auth.currentUser) {
+        bootstrapApp();
+    }
+}
+                
                 
     window.setView = setView;
     window.navigateBack = () => setView('main');
