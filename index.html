@@ -469,30 +469,46 @@
         setView('main');
     };
 
-    window.openSettings = async () => {
-        const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
-        const data = snap.data();
-        const toggle = document.getElementById('toggle-requests');
-        data.acceptingRequests ? toggle.classList.add('active') : toggle.classList.remove('active');
-        
-        const container = document.getElementById('blocked-list-container');
-        container.innerHTML = "";
-        for (const uid of (data.blockedList || [])) {
-            const uSnap = await getDoc(doc(db, "users", uid));
-            const uData = uSnap.data();
-            const div = document.createElement('div');
-            div.style = "display:flex; align-items:center; justify-content:space-between; padding:10px; background:#2c2c2c; color:white; margin-bottom:8px; border-radius:12px;";
-            div.innerHTML = `
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <img src="${uData?.photoURL}" style="width:35px; height:35px; border-radius:50%;">
-                    <div style="font-size:11px;"><b>${uData?.name || 'User'}</b><br>${uid}</div>
-                </div>
-                <button onclick="unblockUser('${uid}')" style="color:#ff3b30; border:none; background:none; font-weight:600; cursor:pointer;">Unblock</button>
-            `;
-            container.appendChild(div);
+                window.openSettings = async () => {
+    const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
+    const data = snap.data();
+    
+    // Sincroniza o botão visualmente com o banco
+    const toggle = document.getElementById('toggle-requests');
+    if (toggle) {
+        if (data.acceptingRequests === true) {
+            toggle.classList.add('active');
+        } else {
+            toggle.classList.remove('active');
         }
-        setView('settings');
-    };
+    }
+    
+    const container = document.getElementById('blocked-list-container');
+    container.innerHTML = "";
+    
+    // Loop corrigido para evitar erros se o usuário bloqueado não existir mais
+    const blockedList = data.blockedList || [];
+    for (const uid of blockedList) {
+        try {
+            const uSnap = await getDoc(doc(db, "users", uid));
+            if (uSnap.exists()) {
+                const uData = uSnap.data();
+                const div = document.createElement('div');
+                div.style = "display:flex; align-items:center; justify-content:space-between; padding:10px; background:#2c2c2c; color:white; margin-bottom:8px; border-radius:12px;";
+                div.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <img src="${uData.photoURL}" style="width:35px; height:35px; border-radius:50%;">
+                        <div style="font-size:11px;"><b>${uData.name}</b><br>${uid}</div>
+                    </div>
+                    <button onclick="unblockUser('${uid}')" style="color:#ff3b30; border:none; background:none; font-weight:600; cursor:pointer;">Unblock</button>
+                `;
+                container.appendChild(div);
+            }
+        } catch (e) { console.warn("Error loading, blocked:", uid); }
+    }
+    setView('settings');
+};
+                    
 
     window.unblockUser = async (uid) => {
         await updateDoc(doc(db, "users", auth.currentUser.uid), { blockedList: arrayRemove(uid) });
