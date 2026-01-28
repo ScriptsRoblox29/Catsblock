@@ -280,10 +280,11 @@
         </div>
     </div>
 
-    <script type="module">
+            
+                        <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, updateDoc, getDoc, setDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, where, orderBy, serverTimestamp, doc, updateDoc, getDoc, setDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDy6Ewsq2egkBrELp6i9rGLRnvdIYqOxeg",
@@ -299,7 +300,10 @@
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
+        // --- GLOBAL VARIABLES ---
         let currentActiveContactId = null;
+        let currentChatId = null; 
+        let unsubscribeMessages = null;
 
         const views = {
             loading: document.getElementById('view-loading'),
@@ -334,49 +338,15 @@
         };
 
         onAuthStateChanged(auth, (user) => { if (user) { bootstrapApp(); setView('main'); } else { setView('login'); } });
-        
-
-        async function bootstrapApp() {
-    const list = document.getElementById('conversations-list');
-    const user = auth.currentUser;
-
-    // Busca chats onde VOCÊ é um dos participantes
-    const q = query(collection(db, "chats"), where("participants", "array-contains", user.uid));
-
-    onSnapshot(q, (snapshot) => {
-        list.innerHTML = ""; // Limpa a lista para atualizar
-        if (snapshot.empty) {
-            list.innerHTML = `<div style="text-align:center; padding:60px; color:var(--ios-grey);">No conversations found. Click the pencil icon to start a new chat! 💬</div>`;
-            return;
-        }
-
-        snapshot.forEach(docSnap => {
-            const chat = docSnap.data();
-            const chatId = docSnap.id;
-            // Aqui você criaria o HTML de cada item da lista (o card do chat)
-            const item = document.createElement('div');
-            item.className = 'skeleton-item'; // Use sua classe de estilo aqui
-            item.style.display = 'flex';
-            item.style.alignItems = 'center';
-            item.style.padding = '10px';
-            item.innerHTML = `Chat com: ${chatId}`; // Simplificado para teste
-            item.onclick = () => openChat(chatId); 
-            list.appendChild(item);
-        });
-    });
-}
-
 
         // --- SETTINGS LOGIC ---
         window.openSettings = async () => {
             const user = auth.currentUser;
             const snap = await getDoc(doc(db, "users", user.uid));
             const data = snap.data();
-            
             const toggle = document.getElementById('toggle-requests');
             if(data.acceptingRequests) toggle.classList.add('active');
             else toggle.classList.remove('active');
-
             renderBlockedList(data.blockedList || []);
             setView('settings');
         };
@@ -391,33 +361,23 @@
         async function renderBlockedList(list) {
             const container = document.getElementById('blocked-list-container');
             container.innerHTML = list.length ? "" : `<p style="color:var(--ios-grey); font-size: 13px;">No users blocked.</p>`;
-            
             for (const uid of list) {
                 const uSnap = await getDoc(doc(db, "users", uid));
                 if (!uSnap.exists()) continue;
                 const uData = uSnap.data();
-                
                 const div = document.createElement('div');
                 div.className = 'blocked-user-card';
-                div.innerHTML = `
-                    <img src="${uData.photoURL}" class="blocked-img">
-                    <div style="text-align: left;">
-                        <div style="font-weight: 600; font-size: 14px;">${uData.name}</div>
-                        <div style="font-size: 11px; color: var(--ios-grey);">${uid}</div>
-                    </div>
-                    <button class="unblock-btn" onclick="handleUnblock('${uid}')">Unblock</button>
-                `;
+                div.innerHTML = `<img src="${uData.photoURL}" class="blocked-img"><div style="text-align: left;"><div style="font-weight: 600; font-size: 14px;">${uData.name}</div><div style="font-size: 11px; color: var(--ios-grey);">${uid}</div></div><button class="unblock-btn" onclick="handleUnblock('${uid}')">Unblock</button>`;
                 container.appendChild(div);
             }
         }
+
         window.handleUnblock = async (uid) => {
-            await updateDoc(doc(db, "users", auth.currentUser.uid), {
-                blockedList: arrayRemove(uid)
-            });
-            openSettings(); // Refresh view
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { blockedList: arrayRemove(uid) });
+            openSettings(); 
         };
 
-        // --- PROFILE & CHAT LOGIC ---
+        // --- PROFILE & CONTACT LOGIC ---
         window.openUserProfile = async () => {
             const user = auth.currentUser;
             const snap = await getDoc(doc(db, "users", user.uid));
@@ -446,82 +406,105 @@
             setView('contactInfo');
         };
 
+        // --- CHAT CORE LOGIC ---
+        async function bootstrapApp() {
+            const list = document.getElementById('conversations-list');
+            const user = auth.currentUser;
+            const q = query(collection(db, "chats"), where("participants", "array-contains", user.uid));
+            onSnapshot(q, (snapshot) => {
+                list.innerHTML = snapshot.empty ? `<div style="text-align:center; padding:60px; color:var(--ios-grey);">No conversations found.</div>` : "";
+                snapshot.forEach(docSnap => {
+                    const chatId = docSnap.id;
+                    const div = document.createElement('div');
+                    div.className = 'skeleton-item';
+                    div.style.padding = '15px'; div.style.cursor = 'pointer';
+                    div.innerHTML = `<strong>Chat: ${chatId.substring(0,8)}...</strong>`;
+                    div.onclick = () => openChat(chatId);
+                    list.appendChild(div);
+                });
+            });
+        }
+
+        window.openChat = (chatId) => {
+            currentChatId = chatId;
+            document.getElementById('chat-scroller').innerHTML = ""; 
+            setView('chat');
+            listenForMessages(chatId);
+        };
+
+        function listenForMessages(chatId) {
+            if (unsubscribeMessages) unsubscribeMessages();
+            const q = query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc"));
+            unsubscribeMessages = onSnapshot(q, (snapshot) => {
+                const scroller = document.getElementById('chat-scroller');
+                scroller.innerHTML = "";
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    const mode = data.sender === auth.currentUser.uid ? 'sent' : 'received';
+                    renderBubble(data, mode);
+                });
+            });
+        }
+
+        function renderBubble(data, mode) {
+            const scroller = document.getElementById('chat-scroller');
+            const row = document.createElement('div');
+            row.className = `message-row row-${mode}`;
+            row.innerHTML = `<div class="bubble ${mode}">${data.content}</div>`;
+            scroller.appendChild(row);
+            scroller.scrollTop = scroller.scrollHeight;
+        }
+
+        async function postMessage() {
+            const textarea = document.getElementById('main-textarea');
+            const rawText = textarea.value.trim();
+            const user = auth.currentUser;
+            if (rawText.length < 1 || !currentChatId) return;
+            try {
+                await addDoc(collection(db, "chats", currentChatId, "messages"), {
+                    content: rawText,
+                    sender: user.uid,
+                    createdAt: serverTimestamp()
+                });
+                textarea.value = "";
+                textarea.style.height = 'auto';
+            } catch (e) { console.error(e); }
+        }
+
         window.openNewConversation = async () => {
             const targetId = prompt("Enter User ID:");
-            if(!targetId) return;
-            const myId = auth.currentUser.uid;
-            if(targetId === myId) { alert("You cannot start a conversation with yourself."); return; }
+            if(!targetId || targetId === auth.currentUser.uid) return;
             try {
                 const userSnap = await getDoc(doc(db, "users", targetId));
-                if(!userSnap.exists()) { alert("User ID not found."); return; }
-                const userData = userSnap.data();
-                if(userData.acceptingRequests === false) { alert("This user is not accepting new requests."); return; }
-                if(userData.blockedList && userData.blockedList.includes(myId)) { alert("You cannot message this user."); return; }
+                if(!userSnap.exists()) return alert("User not found.");
+                const myId = auth.currentUser.uid;
+                const chatId = myId < targetId ? `${myId}_${targetId}` : `${targetId}_${myId}`;
+                await setDoc(doc(db, "chats", chatId), {
+                    participants: [myId, targetId],
+                    createdAt: serverTimestamp()
+                }, { merge: true });
                 currentActiveContactId = targetId;
-                document.getElementById('chat-contact-name').innerText = userData.name;
-                setView('chat');
+                document.getElementById('chat-contact-name').innerText = userSnap.data().name;
+                openChat(chatId);
             } catch (err) { alert("Error connecting."); }
         };
 
         window.handleUserBlock = async () => {
             if(!currentActiveContactId) return;
             await updateDoc(doc(db, "users", auth.currentUser.uid), { blockedList: arrayUnion(currentActiveContactId) });
-            alert("User blocked.");
-            window.toggleBlockModal(false);
             setView('main');
         };
 
+        // --- UI EVENTS ---
+        document.getElementById('btn-send').onclick = postMessage;
+        window.navigateBack = () => setView('main');
+        window.toggleBlockModal = (show) => document.getElementById('modal-block').style.display = show ? 'flex' : 'none';
+        
         const textarea = document.getElementById('main-textarea');
         textarea.addEventListener('input', function() {
             this.style.height = 'auto';
             this.style.height = Math.min(this.scrollHeight, 72) + 'px';
         });
-
-        async function postMessage() {
-    const rawText = document.getElementById('main-textarea').value.trim();
-    const user = auth.currentUser;
-
-    // 1. Verificações de segurança
-    if (rawText.length < 1) return;
-    if (!user) return alert("No tokens of your account were found.");
-    if (!currentChatId) return alert("The chat ID does not exist.");
-
-    try {
-        // 2. Salva a mensagem no Firebase na sub-coleção 'messages' do chat atual
-        // O nome da coleção no seu banco é 'chats'
-        const messagesRef = collection(db, "chats", currentChatId, "messages");
-        
-        await addDoc(messagesRef, {
-            content: rawText,
-            sender: user.uid,
-            createdAt: serverTimestamp() // Usa o tempo do servidor
-        });
-
-        // 3. Limpa o campo de texto
-        const textarea = document.getElementById('main-textarea');
-        textarea.value = "";
-        textarea.style.height = 'auto';
-
-    } catch (error) {
-        console.error("Error sending to server:", error);
-        alert("Error sending message.");
-    }
-        }
-        
-
-        function renderBubble(data, mode) {
-            const scroller = document.getElementById('chat-scroller');
-            const row = document.createElement('div');
-            row.className = `message-row row-${mode}`;
-            row.innerHTML = `<div class="bubble ${mode}">${data.content}</div><div class="msg-time">Now</div>`;
-            scroller.appendChild(row);
-            scroller.scrollTop = scroller.scrollHeight;
-        }
-
-        document.getElementById('btn-send').onclick = postMessage;
-        window.setView = setView;
-        window.navigateBack = () => setView('main');
-        window.toggleBlockModal = (show) => document.getElementById('modal-block').style.display = show ? 'flex' : 'none';
-    </script>
-</body>
-</html>
+                        </script>
+<body>
+    <html>
