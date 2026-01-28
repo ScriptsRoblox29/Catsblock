@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CatsBlock iOS 26</title>
+    <title>CatsBlock</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
@@ -12,6 +12,7 @@
             --ios-blue: #007AFF;
             --ios-red: #ff3b30;
             --ios-grey: #8e8e93;
+            --ios-green: #34c759;
             --sent-gradient: linear-gradient(180deg, #007AFF 0%, #0056B3 100%);
             --received-bg: #262629;
             --blur-header: rgba(28, 28, 30, 0.85);
@@ -98,6 +99,38 @@
         .tab-icon { color: var(--ios-grey); font-size: 22px; cursor: pointer; transition: 0.2s; }
         .tab-icon.active { color: var(--ios-blue); }
 
+        /* --- PROFILE STYLES --- */
+        .profile-container { flex: 1; overflow-y: auto; text-align: center; padding: 20px; }
+        .profile-avatar { width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--ios-blue); margin-bottom: 15px; }
+        .profile-info-box { background: var(--ios-card-bg); border-radius: 12px; padding: 15px; margin-bottom: 15px; text-align: left; }
+        .profile-label { color: var(--ios-grey); font-size: 12px; margin-bottom: 5px; text-transform: uppercase; }
+        .profile-value { font-size: 16px; word-break: break-all; }
+        .bio-textarea { width: 100%; background: transparent; border: none; color: white; font-size: 16px; font-family: inherit; resize: none; }
+
+        /* --- SETTINGS SPECIFIC --- */
+        .settings-row { display: flex; justify-content: space-between; align-items: center; }
+        .ios-toggle {
+            position: relative; width: 51px; height: 31px;
+            background: #39393d; border-radius: 16px; cursor: pointer; transition: 0.3s;
+        }
+        .ios-toggle.active { background: var(--ios-green); }
+        .ios-toggle::after {
+            content: ''; position: absolute; width: 27px; height: 27px;
+            background: white; border-radius: 50%; top: 2px; left: 2px;
+            transition: 0.3s; box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+        }
+        .ios-toggle.active::after { left: 22px; }
+        
+        .blocked-user-card {
+            display: flex; align-items: center; gap: 12px; padding: 12px;
+            background: var(--ios-card-bg); border-radius: 14px; margin-bottom: 10px;
+        }
+        .blocked-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+        .unblock-btn {
+            margin-left: auto; color: var(--ios-blue); font-weight: 600;
+            background: transparent; border: none; cursor: pointer;
+        }
+
         /* --- IOS ALERTS --- */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -144,20 +177,59 @@
             <h1 style="font-size: 32px; font-weight: 700;">Messages</h1>
             <i class="fa-regular fa-pen-to-square" style="color: var(--ios-blue); font-size: 22px; cursor: pointer;" onclick="openNewConversation()"></i>
         </header>
-        <div id="conversations-list" style="flex:1; overflow-y:auto;">
-            </div>
+        <div id="conversations-list" style="flex:1; overflow-y:auto;"></div>
         <nav class="tab-bar">
             <div class="tab-icon active"><i class="fa-solid fa-comment"></i></div>
-            <div class="tab-icon"><i class="fa-solid fa-circle-user"></i></div>
+            <div class="tab-icon" onclick="openUserProfile()"><i class="fa-solid fa-circle-user"></i></div>
         </nav>
     </div>
 
-    <div id="view-chat" class="app-view">
+    <div id="view-my-profile" class="app-view">
+        <header>
+            <i class="fa-solid fa-chevron-left" style="color: var(--ios-blue); font-size: 20px; cursor:pointer;" onclick="setView('main')"></i>
+            <h1 style="font-size: 20px; font-weight: 700;">My Profile</h1>
+            <i class="fa-solid fa-gear" style="color: var(--ios-blue); font-size: 22px; cursor:pointer;" onclick="openSettings()"></i>
+        </header>
+        <div class="profile-container">
+            <img id="my-profile-img" class="profile-avatar" src="">
+            <div class="profile-info-box">
+                <div class="profile-label">Display Name</div>
+                <div id="my-profile-name" class="profile-value">---</div>
+            </div>
+            <div class="profile-info-box">
+                <div class="profile-label">My User ID</div>
+                <div id="my-profile-id" class="profile-value" style="color: var(--ios-blue); font-size: 14px;">---</div>
+            </div>
+            <div class="profile-info-box">
+                <div class="profile-label">Bio / Description</div>
+                <textarea id="my-profile-bio" class="bio-textarea" rows="4" placeholder="Update your bio..."></textarea>
+            </div>
+            <button onclick="saveMyBio()" style="background: var(--ios-blue); color: white; border: none; padding: 12px 30px; border-radius: 12px; font-weight: 600;">Save Bio</button>
+        </div>
+    </div>
+
+    <div id="view-settings" class="app-view">
+        <header>
+            <i class="fa-solid fa-chevron-left" style="color: var(--ios-blue); font-size: 20px; cursor:pointer;" onclick="setView('myProfile')"></i>
+            <h1 style="font-size: 20px; font-weight: 700;">Settings</h1>
+            <div style="width: 20px;"></div>
+        </header>
+        <div class="profile-container">
+            <div class="profile-info-box settings-row">
+                <div style="font-weight: 500;">Accept new conversations</div>
+                <div id="toggle-requests" class="ios-toggle active" onclick="toggleAcceptRequests()"></div>
+            </div>
+            
+            <h2 style="text-align: left; font-size: 14px; color: var(--ios-grey); text-transform: uppercase; margin: 25px 5px 10px;">Blocked Users</h2>
+            <div id="blocked-list-container"></div>
+        </div>
+    </div>
+        <div id="view-chat" class="app-view">
         <header style="padding-top: 50px; justify-content: flex-start; gap: 15px;">
             <i class="fa-solid fa-chevron-left" style="color: var(--ios-blue); font-size: 20px; cursor:pointer;" onclick="navigateBack()"></i>
-            <div style="flex:1; text-align: center; margin-right: 35px;">
+            <div style="flex:1; text-align: center; margin-right: 35px; cursor: pointer;" onclick="openContactInfo()">
                 <div id="chat-contact-name" style="font-weight: 600; font-size: 17px;">Contact</div>
-                <div style="font-size: 11px; color: var(--ios-grey);">iMessage</div>
+                <div style="font-size: 11px; color: var(--ios-grey);">Tap for info</div>
             </div>
         </header>
         <div id="chat-scroller"></div>
@@ -169,12 +241,35 @@
         </div>
     </div>
 
+    <div id="view-contact-info" class="app-view">
+        <header>
+            <i class="fa-solid fa-chevron-left" style="color: var(--ios-blue); font-size: 20px; cursor:pointer;" onclick="setView('chat')"></i>
+            <h1 style="font-size: 20px; font-weight: 700;">Info</h1>
+            <i class="fa-solid fa-ellipsis" style="color: var(--ios-blue); font-size: 20px; cursor:pointer;" onclick="toggleBlockModal(true)"></i>
+        </header>
+        <div class="profile-container">
+            <img id="info-profile-img" class="profile-avatar" src="">
+            <div class="profile-info-box">
+                <div class="profile-label">Name</div>
+                <div id="info-profile-name" class="profile-value">---</div>
+            </div>
+            <div class="profile-info-box">
+                <div class="profile-label">User ID</div>
+                <div id="info-profile-id" class="profile-value">---</div>
+            </div>
+            <div class="profile-info-box">
+                <div class="profile-label">Bio</div>
+                <div id="info-profile-bio" class="profile-value">---</div>
+            </div>
+        </div>
+    </div>
+
     <div id="modal-block" class="modal-overlay">
         <div class="ios-modal">
             <div style="padding: 20px 16px 8px; font-weight: 600;">Block this person?</div>
-            <div style="padding: 0 16px 20px; font-size: 13px; color: var(--ios-grey);">Are you sure? They won't be notified.</div>
+            <div style="padding: 0 16px 20px; font-size: 13px; color: var(--ios-grey);">Are you sure you want to block that person?</div>
             <div class="modal-btn-group">
-                <button class="modal-btn" onclick="toggleBlockModal(false)">Cancel</button>
+                <button class="modal-btn" onclick="toggleBlockModal(false)">Never mind</button>
                 <button class="modal-btn destructive" onclick="handleUserBlock()">Block</button>
             </div>
         </div>
@@ -183,7 +278,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, updateDoc, getDoc, setDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDy6Ewsq2egkBrELp6i9rGLRnvdIYqOxeg",
@@ -199,33 +294,47 @@
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
+        let currentActiveContactId = null;
+
         const views = {
             loading: document.getElementById('view-loading'),
             login: document.getElementById('view-login'),
             main: document.getElementById('view-main'),
-            chat: document.getElementById('view-chat')
+            chat: document.getElementById('view-chat'),
+            myProfile: document.getElementById('view-my-profile'),
+            contactInfo: document.getElementById('view-contact-info'),
+            settings: document.getElementById('view-settings')
         };
 
         function setView(viewId) {
             Object.values(views).forEach(v => v.classList.remove('active'));
             views[viewId].classList.add('active');
+            if (viewId === 'main' && auth.currentUser) { bootstrapApp(); }
         }
 
         document.getElementById('google-auth-trigger').onclick = async () => {
-            try { await signInWithPopup(auth, provider); } 
+            try { 
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+                await setDoc(doc(db, "users", user.uid), {
+                    name: user.displayName,
+                    email: user.email,
+                    photoURL: user.photoURL,
+                    bio: "Hello! I am using CatsBlock.",
+                    acceptingRequests: true,
+                    blockedList: []
+                }, { merge: true });
+            } 
             catch (err) { console.error("Login Error:", err); }
         };
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) { bootstrapApp(); } 
-            else { setView('login'); }
-        });
+        onAuthStateChanged(auth, (user) => { if (user) { bootstrapApp(); setView('main'); } else { setView('login'); } });
+        
 
-        function bootstrapApp() {
-            setView('main');
+        async function bootstrapApp() {
+            views.main.classList.add('active');
             const list = document.getElementById('conversations-list');
             list.innerHTML = Array(10).fill('<div class="skeleton-item"></div>').join('');
-            
             setTimeout(() => {
                 list.innerHTML = `<div style="text-align:center; padding:60px; color:var(--ios-grey); font-size: 15px;">
                     No conversation for now.<br>Click the pencil icon to start one!
@@ -233,46 +342,137 @@
             }, 1800);
         }
 
+        // --- SETTINGS LOGIC ---
+        window.openSettings = async () => {
+            const user = auth.currentUser;
+            const snap = await getDoc(doc(db, "users", user.uid));
+            const data = snap.data();
+            
+            const toggle = document.getElementById('toggle-requests');
+            if(data.acceptingRequests) toggle.classList.add('active');
+            else toggle.classList.remove('active');
+
+            renderBlockedList(data.blockedList || []);
+            setView('settings');
+        };
+
+        window.toggleAcceptRequests = async () => {
+            const toggle = document.getElementById('toggle-requests');
+            const newState = !toggle.classList.contains('active');
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { acceptingRequests: newState });
+            toggle.classList.toggle('active');
+        };
+
+        async function renderBlockedList(list) {
+            const container = document.getElementById('blocked-list-container');
+            container.innerHTML = list.length ? "" : `<p style="color:var(--ios-grey); font-size: 13px;">No users blocked.</p>`;
+            
+            for (const uid of list) {
+                const uSnap = await getDoc(doc(db, "users", uid));
+                if (!uSnap.exists()) continue;
+                const uData = uSnap.data();
+                
+                const div = document.createElement('div');
+                div.className = 'blocked-user-card';
+                div.innerHTML = `
+                    <img src="${uData.photoURL}" class="blocked-img">
+                    <div style="text-align: left;">
+                        <div style="font-weight: 600; font-size: 14px;">${uData.name}</div>
+                        <div style="font-size: 11px; color: var(--ios-grey);">${uid}</div>
+                    </div>
+                    <button class="unblock-btn" onclick="handleUnblock('${uid}')">Unblock</button>
+                `;
+                container.appendChild(div);
+            }
+        }
+        window.handleUnblock = async (uid) => {
+            await updateDoc(doc(db, "users", auth.currentUser.uid), {
+                blockedList: arrayRemove(uid)
+            });
+            openSettings(); // Refresh view
+        };
+
+        // --- PROFILE & CHAT LOGIC ---
+        window.openUserProfile = async () => {
+            const user = auth.currentUser;
+            const snap = await getDoc(doc(db, "users", user.uid));
+            const data = snap.data();
+            document.getElementById('my-profile-img').src = user.photoURL;
+            document.getElementById('my-profile-name').innerText = data.name;
+            document.getElementById('my-profile-id').innerText = user.uid;
+            document.getElementById('my-profile-bio').value = data.bio || "";
+            setView('myProfile');
+        };
+
+        window.saveMyBio = async () => {
+            const newBio = document.getElementById('my-profile-bio').value;
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { bio: newBio });
+            alert("Bio updated!");
+        };
+
+        window.openContactInfo = async () => {
+            if(!currentActiveContactId) return;
+            const snap = await getDoc(doc(db, "users", currentActiveContactId));
+            const data = snap.data();
+            document.getElementById('info-profile-img').src = data.photoURL || "";
+            document.getElementById('info-profile-name').innerText = data.name;
+            document.getElementById('info-profile-id').innerText = currentActiveContactId;
+            document.getElementById('info-profile-bio').innerText = data.bio || "No description.";
+            setView('contactInfo');
+        };
+
+        window.openNewConversation = async () => {
+            const targetId = prompt("Enter User ID:");
+            if(!targetId) return;
+            const myId = auth.currentUser.uid;
+            if(targetId === myId) { alert("You cannot start a conversation with yourself."); return; }
+            try {
+                const userSnap = await getDoc(doc(db, "users", targetId));
+                if(!userSnap.exists()) { alert("User ID not found."); return; }
+                const userData = userSnap.data();
+                if(userData.acceptingRequests === false) { alert("This user is not accepting new requests."); return; }
+                if(userData.blockedList && userData.blockedList.includes(myId)) { alert("You cannot message this user."); return; }
+                currentActiveContactId = targetId;
+                document.getElementById('chat-contact-name').innerText = userData.name;
+                setView('chat');
+            } catch (err) { alert("Error connecting."); }
+        };
+
+        window.handleUserBlock = async () => {
+            if(!currentActiveContactId) return;
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { blockedList: arrayUnion(currentActiveContactId) });
+            alert("User blocked.");
+            window.toggleBlockModal(false);
+            setView('main');
+        };
+
         const textarea = document.getElementById('main-textarea');
         textarea.addEventListener('input', function() {
             this.style.height = 'auto';
-            const newHeight = Math.min(this.scrollHeight, 72);
-            this.style.height = newHeight + 'px';
-            this.style.overflowY = this.scrollHeight > 72 ? 'auto' : 'hidden';
+            this.style.height = Math.min(this.scrollHeight, 72) + 'px';
         });
 
         async function postMessage() {
             const rawText = textarea.value.trim();
-            if (rawText.length < 1 || rawText.length > 300) return;
-
-            const messagePayload = {
-                sender: auth.currentUser.uid,
-                content: rawText,
-                createdAt: serverTimestamp(),
-                status: 'sending'
-            };
-
-            renderBubble({ ...messagePayload, createdAt: null }, 'sent');
+            if (rawText.length < 1) return;
+            renderBubble({ content: rawText, createdAt: null }, 'sent');
             textarea.value = "";
             textarea.style.height = 'auto';
-            // Firebase addDoc logic would go here
         }
 
         function renderBubble(data, mode) {
             const scroller = document.getElementById('chat-scroller');
             const row = document.createElement('div');
             row.className = `message-row row-${mode}`;
-            const timeString = data.createdAt ? "Now" : "...";
-            row.innerHTML = `<div class="bubble ${mode}">${data.content}</div><div class="msg-time">${timeString}</div>`;
+            row.innerHTML = `<div class="bubble ${mode}">${data.content}</div><div class="msg-time">Now</div>`;
             scroller.appendChild(row);
             scroller.scrollTop = scroller.scrollHeight;
         }
 
         document.getElementById('btn-send').onclick = postMessage;
+        window.setView = setView;
         window.navigateBack = () => setView('main');
-        window.toggleBlockModal = (show) => {
-            document.getElementById('modal-block').style.display = show ? 'flex' : 'none';
-        };
+        window.toggleBlockModal = (show) => document.getElementById('modal-block').style.display = show ? 'flex' : 'none';
     </script>
 </body>
 </html>
