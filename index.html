@@ -469,39 +469,43 @@ onSnapshot(doc(db, "chats", chatId), (docSnap) => {
     }
 });
         
-    // OUVINTE B: Monitora novas mensagens e atualizações de tempo
-    const q = query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc"));
-    unsubscribeMessages = onSnapshot(q, async (snapshot) => {
-        
-        if (!snapshot.empty && views.chat.classList.contains('active')) {
-            await updateDoc(doc(db, "chats", chatId), {
-                [`lastRead.${auth.currentUser.uid}`]: serverTimestamp()
-            }).catch(() => {});
+// OUVINTE B: Monitora novas mensagens
+const q = query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc"));
+unsubscribeMessages = onSnapshot(q, async (snapshot) => {
+    
+    // Visto Automático
+    if (!snapshot.empty && views.chat.classList.contains('active')) {
+        await updateDoc(doc(db, "chats", chatId), {
+            [`lastRead.${auth.currentUser.uid}`]: serverTimestamp()
+        }).catch(() => {});
+    }
+
+    snapshot.docChanges().forEach((change) => {
+        const data = change.doc.data();
+        const msgId = change.doc.id;
+
+        if (change.type === "added") {
+            // Cria a bolha (vai nascer como "Sending")
+            renderBubble(data, msgId);
         }
 
-        snapshot.docChanges().forEach((change) => {
-            const data = change.doc.data();
-            const msgId = change.doc.id;
-
-            if (change.type === "added") {
-                renderBubble(data, msgId);
-            }
-
-            // ISSO RESOLVE O "SENDING..." ETERNO:
-            if (change.type === "modified") {
-                const row = document.querySelector(`[data-id="${msgId}"]`);
-                if (row) {
-                    // Atualiza o horário (tira o Sending e põe o Now/Hora)
-                    const timeEl = row.querySelector('.msg-time');
-                    if (timeEl && data.createdAt) {
-                        timeEl.innerText = formatChatTime(data.createdAt);
-                        // Atualiza o atributo de tempo para o visto funcionar
-                        row.setAttribute('data-time', data.createdAt.toMillis());
-                    }
+        if (change.type === "modified") {
+            // QUANDO O FIREBASE CONFIRMA A HORA:
+            const row = document.querySelector(`[data-id="${msgId}"]`);
+            if (row) {
+                const timeEl = row.querySelector('.msg-time');
+                if (timeEl && data.createdAt) {
+                    // Troca "Sending" pelo horário real ou "Now"
+                    timeEl.innerText = formatChatTime(data.createdAt);
+                    
+                    // Atualiza o atributo de tempo para o visto funcionar
+                    row.setAttribute('data-time', data.createdAt.toMillis());
                 }
             }
-        });
+        }
     });
+});
+
 
 
 
