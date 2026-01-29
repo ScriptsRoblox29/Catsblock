@@ -494,13 +494,12 @@ function setView(viewId) {
             content: text,
             sender: auth.currentUser.uid,
             createdAt: serverTimestamp()
-        });
-        // Linha nova para o visto:
-        await updateDoc(doc(db, "db", "chats", currentChatId), {
+                });
+        await updateDoc(doc(db, "chats", currentChatId), {
             [`lastRead.${auth.currentUser.uid}`]: serverTimestamp()
         });
     } catch (e) {
-        // removed
+        // Silencioso, sem travar o script
     }
 };
                 
