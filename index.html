@@ -443,21 +443,32 @@ function setView(viewId) {
     const scroller = document.getElementById('chat-scroller');
     scroller.innerHTML = ""; 
 
-    // OUVINTE A: Monitora o "Visto" do seu amigo para pintar os checks de azul
-    onSnapshot(doc(db, "chats", chatId), (docSnap) => {
-        const data = docSnap.data();
-        if (!data) return;
-        const otherId = data.participants.find(id => id !== auth.currentUser.uid);
-        const otherLastRead = data.lastRead ? data.lastRead[otherId] : null;
+// OUVINTE A: Monitora o "Visto" real do amigo
+onSnapshot(doc(db, "chats", chatId), (docSnap) => {
+    const data = docSnap.data();
+    if (!data || !data.lastRead) return;
 
-        if (otherLastRead) {
-            // Se o amigo leu, procura todos os seus checks na tela e pinta de azul
-            document.querySelectorAll('.row-sent .read-status').forEach(status => {
+    const otherId = data.participants.find(id => id !== auth.currentUser.uid);
+    const otherLastRead = data.lastRead[otherId];
+
+    if (otherLastRead) {
+        const friendViewTime = otherLastRead.toMillis();
+
+        // Percorre as mensagens enviadas
+        document.querySelectorAll('.row-sent').forEach(row => {
+            const msgTime = parseInt(row.getAttribute('data-time')); // Pegamos o tempo da mensagem
+            const status = row.querySelector('.read-status');
+
+            // SÓ fica azul se o tempo da mensagem for MENOR ou IGUAL ao tempo do visto do amigo
+            if (status && msgTime <= friendViewTime) {
                 status.classList.add('read');
-            });
-        }
-    });
-
+            } else if (status) {
+                status.classList.remove('read'); // Garante que fique cinza se for nova
+            }
+        });
+    }
+});
+            
     // OUVINTE B: Monitora novas mensagens
     const q = query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc"));
     unsubscribeMessages = onSnapshot(q, async (snapshot) => {
@@ -483,13 +494,21 @@ function setView(viewId) {
     const isMine = data.sender === auth.currentUser.uid;
     const mode = isMine ? 'sent' : 'received';
     
-    // Verifica se é azul ou cinza
-    const isRead = isMine && lastReadTime && data.createdAt && 
-                   (data.createdAt.toDate() <= lastReadTime.toDate());
+    // 1. Pegamos o tempo da mensagem em milissegundos (ou o agora, se ainda estiver enviando)
+    const msgTime = data.createdAt ? data.createdAt.toMillis() : Date.now();
+    
+    // 2. Pegamos o tempo do visto do amigo
+    const friendReadTime = lastReadTime ? lastReadTime.toMillis() : 0;
+
+    // 3. Só é azul se: for minha AND tiver visto do amigo AND tempo da msg <= tempo do visto
+    const isRead = isMine && friendReadTime > 0 && (msgTime <= friendReadTime);
 
     const row = document.createElement('div');
     row.className = `message-row row-${mode}`;
     row.setAttribute('data-id', msgId);
+    
+    // IMPORTANTE: Adicionamos o data-time para o OUVINTE A conseguir ler depois
+    row.setAttribute('data-time', msgTime); 
     
     row.innerHTML = `
         <div class="bubble ${mode}">
@@ -505,7 +524,8 @@ function setView(viewId) {
     `;
     scroller.appendChild(row);
     scroller.scrollTop = scroller.scrollHeight;
-    }
+        }
+        
                 
 
     window.postMessage = async () => {
