@@ -423,20 +423,41 @@ function setView(viewId) {
         });
     }
 
-    // --- CHAT ENGINE ---
-    window.openChat = async (chatId, contactName, contactId) => {
+window.openChat = async (chatId, contactName, contactId) => {
     currentChatId = chatId;
     currentActiveContactId = contactId;
+
+    // 1. Define o nome imediatamente (velocidade)
     document.getElementById('chat-contact-name').innerText = contactName;
+    document.getElementById('chat-scroller').innerHTML = ""; 
     
-    // Marca como lido no momento que entra
-    await updateDoc(doc(db, "chats", chatId), {
+    // 2. Abre a tela e inicia o chat
+    setView('chat');
+    listenForMessages(chatId);
+
+    // 3. Marca como lido
+    updateDoc(doc(db, "chats", chatId), {
         [`lastRead.${auth.currentUser.uid}`]: serverTimestamp()
     }).catch(() => {});
 
-    setView('chat');
-    listenForMessages(chatId);
+    // 4. Busca os detalhes (Bio/Foto) em background para a tela de INFO
+    try {
+        const contactSnap = await getDoc(doc(db, "users", contactId));
+        if (contactSnap.exists()) {
+            const contactData = contactSnap.data();
+            document.getElementById('info-profile-name').innerText = contactData.name || contactName;
+            document.getElementById('info-profile-img').src = contactData.photoURL || '';
+            document.getElementById('info-profile-id').innerText = contactId;
+            document.getElementById('info-profile-bio').innerText = contactData.bio || 'No bio yet.';
+        }
+    } catch (e) { console.error("Erro ao carregar info do contato:", e); }
 };
+
+// ESSENCIAL: Essa função faz o clique no nome funcionar
+window.openContactInfo = () => {
+    setView('contactInfo');
+};
+                
 
     function listenForMessages(chatId) {
     if (unsubscribeMessages) unsubscribeMessages();
