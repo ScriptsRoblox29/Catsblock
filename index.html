@@ -468,12 +468,11 @@ onSnapshot(doc(db, "chats", chatId), (docSnap) => {
         });
     }
 });
-            
-    // OUVINTE B: Monitora novas mensagens
+        
+    // OUVINTE B: Monitora novas mensagens e atualizações de tempo
     const q = query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc"));
     unsubscribeMessages = onSnapshot(q, async (snapshot) => {
         
-        // Visto Automático: Se chegar mensagem e você estiver no chat, avisa o banco
         if (!snapshot.empty && views.chat.classList.contains('active')) {
             await updateDoc(doc(db, "chats", chatId), {
                 [`lastRead.${auth.currentUser.uid}`]: serverTimestamp()
@@ -481,12 +480,29 @@ onSnapshot(doc(db, "chats", chatId), (docSnap) => {
         }
 
         snapshot.docChanges().forEach((change) => {
+            const data = change.doc.data();
+            const msgId = change.doc.id;
+
             if (change.type === "added") {
-                renderBubble(change.doc.data(), change.doc.id);
+                renderBubble(data, msgId);
+            }
+
+            // ISSO RESOLVE O "SENDING..." ETERNO:
+            if (change.type === "modified") {
+                const row = document.querySelector(`[data-id="${msgId}"]`);
+                if (row) {
+                    // Atualiza o horário (tira o Sending e põe o Now/Hora)
+                    const timeEl = row.querySelector('.msg-time');
+                    if (timeEl && data.createdAt) {
+                        timeEl.innerText = formatChatTime(data.createdAt);
+                        // Atualiza o atributo de tempo para o visto funcionar
+                        row.setAttribute('data-time', data.createdAt.toMillis());
+                    }
+                }
             }
         });
     });
-}
+
 
 
     function renderBubble(data, msgId, lastReadTime) {
@@ -494,20 +510,16 @@ onSnapshot(doc(db, "chats", chatId), (docSnap) => {
     const isMine = data.sender === auth.currentUser.uid;
     const mode = isMine ? 'sent' : 'received';
     
-    // 1. Pegamos o tempo da mensagem em milissegundos (ou o agora, se ainda estiver enviando)
+    // Se o tempo ainda não chegou do servidor, usamos o tempo local do clique
     const msgTime = data.createdAt ? data.createdAt.toMillis() : Date.now();
-    
-    // 2. Pegamos o tempo do visto do amigo
     const friendReadTime = lastReadTime ? lastReadTime.toMillis() : 0;
 
-    // 3. Só é azul se: for minha AND tiver visto do amigo AND tempo da msg <= tempo do visto
-    const isRead = isMine && friendReadTime > 0 && (msgTime <= friendReadTime);
+    // Só marca como azul se o servidor já confirmou o tempo da msg
+    const isRead = isMine && friendReadTime > 0 && data.createdAt && (msgTime <= friendReadTime);
 
     const row = document.createElement('div');
     row.className = `message-row row-${mode}`;
     row.setAttribute('data-id', msgId);
-    
-    // IMPORTANTE: Adicionamos o data-time para o OUVINTE A conseguir ler depois
     row.setAttribute('data-time', msgTime); 
     
     row.innerHTML = `
@@ -524,7 +536,8 @@ onSnapshot(doc(db, "chats", chatId), (docSnap) => {
     `;
     scroller.appendChild(row);
     scroller.scrollTop = scroller.scrollHeight;
-        }
+}
+
         
                 
 
