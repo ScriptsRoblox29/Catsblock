@@ -423,41 +423,52 @@ function setView(viewId) {
         });
     }
 
-window.openChat = async (chatId, contactName, contactId) => {
+
+                window.openChat = async (chatId, contactName, contactId) => {
     currentChatId = chatId;
+    
+    // Se o contactId não veio, nós buscamos ele direto do chat primeiro
+    if (!contactId) {
+        const chatSnap = await getDoc(doc(db, "chats", chatId));
+        const chatData = chatSnap.data();
+        if (chatData) {
+            contactId = chatData.participants.find(uid => uid !== auth.currentUser.uid);
+        }
+    }
+
+    // Agora que garantimos o ID, o erro de 'indexOf' desaparece
     currentActiveContactId = contactId;
 
-    // 1. Define o nome imediatamente (velocidade)
-    document.getElementById('chat-contact-name').innerText = contactName;
+    // Preenche o nome na barra imediatamente
+    if (contactName) {
+        document.getElementById('chat-contact-name').innerText = contactName;
+    }
+
     document.getElementById('chat-scroller').innerHTML = ""; 
-    
-    // 2. Abre a tela e inicia o chat
     setView('chat');
     listenForMessages(chatId);
 
-    // 3. Marca como lido
+    // Marca como lido
     updateDoc(doc(db, "chats", chatId), {
         [`lastRead.${auth.currentUser.uid}`]: serverTimestamp()
     }).catch(() => {});
 
-    // 4. Busca os detalhes (Bio/Foto) em background para a tela de INFO
-    try {
-        const contactSnap = await getDoc(doc(db, "users", contactId));
-        if (contactSnap.exists()) {
-            const contactData = contactSnap.data();
-            document.getElementById('info-profile-name').innerText = contactData.name || contactName;
-            document.getElementById('info-profile-img').src = contactData.photoURL || '';
-            document.getElementById('info-profile-id').innerText = contactId;
-            document.getElementById('info-profile-bio').innerText = contactData.bio || 'No bio yet.';
-        }
-    } catch (e) { console.error("Erro ao carregar info do contato:", e); }
+    // Carrega o Perfil/Bio para a tela de Info
+    if (contactId) {
+        try {
+            const contactSnap = await getDoc(doc(db, "users", contactId));
+            if (contactSnap.exists()) {
+                const contactData = contactSnap.data();
+                document.getElementById('chat-contact-name').innerText = contactData.name; // Atualiza se o nome mudou
+                document.getElementById('info-profile-name').innerText = contactData.name;
+                document.getElementById('info-profile-img').src = contactData.photoURL || '';
+                document.getElementById('info-profile-id').innerText = contactId;
+                document.getElementById('info-profile-bio').innerText = contactData.bio || 'No bio yet.';
+            }
+        } catch (e) { console.error("Erro interno:", e); }
+    }
 };
-
-// ESSENCIAL: Essa função faz o clique no nome funcionar
-window.openContactInfo = () => {
-    setView('contactInfo');
-};
-                
+                    
 
     function listenForMessages(chatId) {
     if (unsubscribeMessages) unsubscribeMessages();
