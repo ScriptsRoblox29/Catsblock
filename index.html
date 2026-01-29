@@ -469,40 +469,48 @@ onSnapshot(doc(db, "chats", chatId), (docSnap) => {
     }
 });
         
-    // OUVINTE B: Monitora novas mensagens e atualizações de tempo
-    const q = query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc"));
-    unsubscribeMessages = onSnapshot(q, async (snapshot) => {
-        
-        if (!snapshot.empty && views.chat.classList.contains('active')) {
-            await updateDoc(doc(db, "chats", chatId), {
-                [`lastRead.${auth.currentUser.uid}`]: serverTimestamp()
-            }).catch(() => {});
-        }
 
-        snapshot.docChanges().forEach((change) => {
-            const data = change.doc.data();
-            const msgId = change.doc.id;
+        // OUVINTE B: Monitora novas mensagens e atualizações de tempo (confirmando o envio)
+const q = query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc"));
 
-            if (change.type === "added") {
+unsubscribeMessages = onSnapshot(q, (snapshot) => {
+    
+    // Visto Automático: Se você está com o chat aberto, avisa o banco que você leu
+    if (!snapshot.empty && views.chat.classList.contains('active')) {
+        updateDoc(doc(db, "chats", chatId), {
+            [`lastRead.${auth.currentUser.uid}`]: serverTimestamp()
+        }).catch(() => {});
+    }
+
+    snapshot.docChanges().forEach((change) => {
+        const data = change.doc.data();
+        const msgId = change.doc.id;
+
+        // 1. MENSAGEM NOVA: Aparece na tela (pode nascer como "Sending")
+        if (change.type === "added") {
+            // Trava de segurança: só adiciona se a bolha ainda não existir no HTML
+            if (!document.querySelector(`[data-id="${msgId}"]`)) {
                 renderBubble(data, msgId);
             }
+        }
 
-            // ISSO RESOLVE O "SENDING..." ETERNO:
-            if (change.type === "modified") {
-                const row = document.querySelector(`[data-id="${msgId}"]`);
-                if (row) {
-                    // Atualiza o horário (tira o Sending e põe o Now/Hora)
-                    const timeEl = row.querySelector('.msg-time');
-                    if (timeEl && data.createdAt) {
-                        timeEl.innerText = formatChatTime(data.createdAt);
-                        // Atualiza o atributo de tempo para o visto funcionar
-                        row.setAttribute('data-time', data.createdAt.toMillis());
-                    }
+        // 2. CONFIRMAÇÃO DO SERVIDOR: O "Sending" vira o horário real
+        if (change.type === "modified") {
+            const row = document.querySelector(`[data-id="${msgId}"]`);
+            if (row && data.createdAt) {
+                // Atualiza o texto visual de "Sending..." para "Now" ou a hora
+                const timeEl = row.querySelector('.msg-time');
+                if (timeEl) {
+                    timeEl.innerText = formatChatTime(data.createdAt);
                 }
+                
+                // Atualiza o atributo de tempo para que o OUVINTE A (do visto) funcione
+                row.setAttribute('data-time', data.createdAt.toMillis());
             }
-        });
+        }
     });
-        
+});
+               
 
 
 function renderBubble(data, msgId, lastReadTime) {
