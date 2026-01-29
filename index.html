@@ -506,7 +506,7 @@ unsubscribeMessages = onSnapshot(q, (snapshot) => {
         }
     });
 });
-    
+    }
                
 
 
@@ -523,7 +523,7 @@ function renderBubble(data, msgId, lastReadTime) {
     const isRead = isMine && friendReadTime > 0 && data.createdAt && (msgTime <= friendReadTime);
 
     const row = document.createElement('div');
-    row.className = `message-row row-${mode}`;
+    row.className = `message-row row-${mode} ${isMine ? 'row-sent' : ''}`;
     row.setAttribute('data-id', msgId);
     row.setAttribute('data-time', msgTime); 
     
