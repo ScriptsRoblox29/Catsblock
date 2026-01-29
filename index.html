@@ -424,35 +424,59 @@ function setView(viewId) {
     }
 
     // --- CHAT ENGINE ---
-    window.openChat = async (chatId) => {
-        currentChatId = chatId;
-        const chatSnap = await getDoc(doc(db, "chats", chatId));
-        currentActiveContactId = chatSnap.data().participants.find(uid => uid !== auth.currentUser.uid);
-        
-        const contactSnap = await getDoc(doc(db, "users", currentActiveContactId));
-        document.getElementById('chat-contact-name').innerText = contactSnap.data().name;
-        
-        document.getElementById('chat-scroller').innerHTML = ""; 
-        setView('chat');
-        listenForMessages(chatId);
-    };
+    window.openChat = async (chatId, contactName, contactId) => {
+    currentChatId = chatId;
+    currentActiveContactId = contactId;
+    document.getElementById('chat-contact-name').innerText = contactName;
+    
+    // Marca como lido no momento que entra
+    await updateDoc(doc(db, "chats", chatId), {
+        [`lastRead.${auth.currentUser.uid}`]: serverTimestamp()
+    }).catch(() => {});
+
+    setView('chat');
+    listenForMessages(chatId);
+};
 
     function listenForMessages(chatId) {
-        if (unsubscribeMessages) unsubscribeMessages();
-        const q = query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc"));
-        unsubscribeMessages = onSnapshot(q, (snapshot) => {
-            snapshot.docChanges().forEach((change) => {
-                const data = change.doc.data();
-                const msgId = change.doc.id;
-                if (change.type === "added") {
-                    renderBubble(data, msgId);
-                } else if (change.type === "modified") {
-                    const timeDiv = document.querySelector(`[data-id="${msgId}"] .msg-time`);
-                    if (timeDiv) timeDiv.innerText = formatChatTime(data.createdAt);
-                }
+    if (unsubscribeMessages) unsubscribeMessages();
+    const scroller = document.getElementById('chat-scroller');
+    scroller.innerHTML = ""; 
+
+    // OUVINTE A: Monitora o "Visto" do seu amigo para pintar os checks de azul
+    onSnapshot(doc(db, "chats", chatId), (docSnap) => {
+        const data = docSnap.data();
+        if (!data) return;
+        const otherId = data.participants.find(id => id !== auth.currentUser.uid);
+        const otherLastRead = data.lastRead ? data.lastRead[otherId] : null;
+
+        if (otherLastRead) {
+            // Se o amigo leu, procura todos os seus checks na tela e pinta de azul
+            document.querySelectorAll('.row-sent .read-status').forEach(status => {
+                status.classList.add('read');
             });
+        }
+    });
+
+    // OUVINTE B: Monitora novas mensagens
+    const q = query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc"));
+    unsubscribeMessages = onSnapshot(q, async (snapshot) => {
+        
+        // Visto Automático: Se chegar mensagem e você estiver no chat, avisa o banco
+        if (!snapshot.empty && views.chat.classList.contains('active')) {
+            await updateDoc(doc(db, "chats", chatId), {
+                [`lastRead.${auth.currentUser.uid}`]: serverTimestamp()
+            }).catch(() => {});
+        }
+
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === "added") {
+                renderBubble(change.doc.data(), change.doc.id);
+            }
         });
-    }
+    });
+}
+
 
     function renderBubble(data, msgId, lastReadTime) {
     const scroller = document.getElementById('chat-scroller');
@@ -488,20 +512,25 @@ function setView(viewId) {
     const textarea = document.getElementById('main-textarea');
     const text = textarea.value.trim();
     if (!text || !currentChatId) return;
-    textarea.value = ""; textarea.style.height = 'auto';
+    
+    const chatId = currentChatId;
+    textarea.value = ""; 
+    textarea.style.height = 'auto';
+
     try {
-        await addDoc(collection(db, "chats", currentChatId, "messages"), {
+        await addDoc(collection(db, "chats", chatId, "messages"), {
             content: text,
             sender: auth.currentUser.uid,
             createdAt: serverTimestamp()
-                });
-        await updateDoc(doc(db, "chats", currentChatId), {
+        });
+
+        // Atualiza seu próprio visto ao enviar
+        await updateDoc(doc(db, "chats", chatId), {
             [`lastRead.${auth.currentUser.uid}`]: serverTimestamp()
         });
-    } catch (e) {
-        // Silencioso, sem travar o script
-    }
+    } catch (e) { }
 };
+
                 
     document.getElementById('btn-send').onclick = window.postMessage;
 
