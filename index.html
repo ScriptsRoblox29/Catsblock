@@ -337,7 +337,7 @@
 
     // --- SISTEMA DE DATA DINÂMICA ---
     function formatChatTime(timestamp) {
-        if (!timestamp) return "Sending...";
+        if (!timestamp) return "Sent.";
         const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
         const now = new Date();
         const diffMs = now - date;
@@ -469,13 +469,12 @@ onSnapshot(doc(db, "chats", chatId), (docSnap) => {
     }
 });
         
-    // OUVINTE B: Monitora novas mensagens
+    // OUVINTE B: Monitora novas mensagens e atualizações de tempo
     const q = query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc"));
-    unsubscribeMessages = onSnapshot(q, (snapshot) => {
+    unsubscribeMessages = onSnapshot(q, async (snapshot) => {
         
-        // Visto Automático (sem await para não travar o loop)
         if (!snapshot.empty && views.chat.classList.contains('active')) {
-            updateDoc(doc(db, "chats", chatId), {
+            await updateDoc(doc(db, "chats", chatId), {
                 [`lastRead.${auth.currentUser.uid}`]: serverTimestamp()
             }).catch(() => {});
         }
@@ -485,29 +484,28 @@ onSnapshot(doc(db, "chats", chatId), (docSnap) => {
             const msgId = change.doc.id;
 
             if (change.type === "added") {
-                // Evita duplicar se o Firebase reenviar a msg ao confirmar o tempo
-                if (!document.querySelector(`[data-id="${msgId}"]`)) {
-                    renderBubble(data, msgId);
-                }
+                renderBubble(data, msgId);
             }
 
+            // ISSO RESOLVE O "SENDING..." ETERNO:
             if (change.type === "modified") {
-                // AQUI o "Sending" vira "Now" ou a Hora
                 const row = document.querySelector(`[data-id="${msgId}"]`);
-                if (row && data.createdAt) {
+                if (row) {
+                    // Atualiza o horário (tira o Sending e põe o Now/Hora)
                     const timeEl = row.querySelector('.msg-time');
-                    if (timeEl) timeEl.innerText = formatChatTime(data.createdAt);
-                    row.setAttribute('data-time', data.createdAt.toMillis());
+                    if (timeEl && data.createdAt) {
+                        timeEl.innerText = formatChatTime(data.createdAt);
+                        // Atualiza o atributo de tempo para o visto funcionar
+                        row.setAttribute('data-time', data.createdAt.toMillis());
+                    }
                 }
             }
         });
     });
+        
 
 
-
-
-
-    function renderBubble(data, msgId, lastReadTime) {
+function renderBubble(data, msgId, lastReadTime) {
     const scroller = document.getElementById('chat-scroller');
     const isMine = data.sender === auth.currentUser.uid;
     const mode = isMine ? 'sent' : 'received';
@@ -539,6 +537,8 @@ onSnapshot(doc(db, "chats", chatId), (docSnap) => {
     scroller.appendChild(row);
     scroller.scrollTop = scroller.scrollHeight;
 }
+        
+    
 
         
                 
