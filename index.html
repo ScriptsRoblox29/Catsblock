@@ -156,6 +156,27 @@
             0% { transform: scale(0.7); opacity: 0; filter: blur(8px); }
             100% { transform: scale(1); opacity: 1; filter: blur(0); }
         }
+
+            /* No final do seu <style> */
+.bubble {
+    display: flex !important;
+    align-items: flex-end;
+    gap: 6px;
+    justify-content: space-between;
+}
+
+.read-status {
+    display: inline-flex;
+    font-size: 10px;
+    color: var(--ios-grey);
+    margin-bottom: -2px;
+}
+
+.check-2 { margin-left: -7px; display: none; }
+
+.read-status.read { color: #00d2ff; } /* Azul */
+.read-status.read .check-2 { display: inline-block; }
+        
     </style>
 </head>
 <body>
@@ -433,33 +454,54 @@ function setView(viewId) {
         });
     }
 
-    function renderBubble(data, msgId) {
-        const scroller = document.getElementById('chat-scroller');
-        const mode = data.sender === auth.currentUser.uid ? 'sent' : 'received';
-        const row = document.createElement('div');
-        row.className = `message-row row-${mode}`;
-        row.setAttribute('data-id', msgId);
-        row.innerHTML = `
-            <div class="bubble ${mode}">${data.content}</div>
-            <div class="msg-time">${formatChatTime(data.createdAt)}</div>
-        `;
-        scroller.appendChild(row);
-        scroller.scrollTop = scroller.scrollHeight;
+    function renderBubble(data, msgId, lastReadTime) {
+    const scroller = document.getElementById('chat-scroller');
+    const isMine = data.sender === auth.currentUser.uid;
+    const mode = isMine ? 'sent' : 'received';
+    
+    // Verifica se é azul ou cinza
+    const isRead = isMine && lastReadTime && data.createdAt && 
+                   (data.createdAt.toDate() <= lastReadTime.toDate());
+
+    const row = document.createElement('div');
+    row.className = `message-row row-${mode}`;
+    row.setAttribute('data-id', msgId);
+    
+    row.innerHTML = `
+        <div class="bubble ${mode}">
+            <span style="flex:1;">${data.content}</span>
+            ${isMine ? `
+                <span class="read-status ${isRead ? 'read' : ''}">
+                    <i class="fa-solid fa-check check-1"></i>
+                    <i class="fa-solid fa-check check-2"></i>
+                </span>
+            ` : ''}
+        </div>
+        <div class="msg-time">${formatChatTime(data.createdAt)}</div>
+    `;
+    scroller.appendChild(row);
+    scroller.scrollTop = scroller.scrollHeight;
     }
+                
 
     window.postMessage = async () => {
-        const textarea = document.getElementById('main-textarea');
-        const text = textarea.value.trim();
-        if (!text || !currentChatId) return;
-        textarea.value = ""; textarea.style.height = 'auto';
-        try {
-            await addDoc(collection(db, "chats", currentChatId, "messages"), {
-                content: text,
-                sender: auth.currentUser.uid,
-                createdAt: serverTimestamp()
-            });
-        } catch (e) { alert("Error sending message."); }
-    };
+    const textarea = document.getElementById('main-textarea');
+    const text = textarea.value.trim();
+    if (!text || !currentChatId) return;
+    textarea.value = ""; textarea.style.height = 'auto';
+    try {
+        await addDoc(collection(db, "chats", currentChatId, "messages"), {
+            content: text,
+            sender: auth.currentUser.uid,
+            createdAt: serverTimestamp()
+        });
+        // Linha nova para o visto:
+        await updateDoc(doc(db, "db", "chats", currentChatId), {
+            [`lastRead.${auth.currentUser.uid}`]: serverTimestamp()
+        });
+    } catch (e) { alert("Error sending message."); }
+};
+                
     document.getElementById('btn-send').onclick = window.postMessage;
 
     // --- BLOQUEIO E CONFIGS ---
