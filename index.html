@@ -499,7 +499,9 @@ function setView(viewId) {
         await updateDoc(doc(db, "db", "chats", currentChatId), {
             [`lastRead.${auth.currentUser.uid}`]: serverTimestamp()
         });
-    } catch (e) { }
+    } catch (e) {
+        // removed
+    }
 };
                 
     document.getElementById('btn-send').onclick = window.postMessage;
