@@ -236,9 +236,10 @@
         <div class="profile-container">
             <img id="my-profile-img" class="profile-avatar" src="">
             <div class="profile-info-box">
-                <div class="profile-label">Display Name</div>
-                <div id="my-profile-name" class="profile-value">---</div>
+    <div class="profile-label">Display Name</div>
+    <input type="text" id="my-profile-name" class="bio-textarea" placeholder="Your name...">
             </div>
+            
             <div class="profile-info-box">
                 <div class="profile-label">My User ID</div>
                 <div id="my-profile-id" class="profile-value" style="color: var(--ios-blue); font-size: 14px;">---</div>
@@ -247,7 +248,7 @@
                 <div class="profile-label">Bio / Description</div>
                 <textarea id="my-profile-bio" class="bio-textarea" rows="4" placeholder="Update your bio..."></textarea>
             </div>
-            <button onclick="saveMyBio()" style="background: var(--ios-blue); color: white; border: none; padding: 12px 30px; border-radius: 12px; font-weight: 600;">Save Bio</button>
+            <button onclick="saveMyBio()" style="background: var(--ios-blue); color: white; border: none; padding: 12px 30px; border-radius: 12px; font-weight: 600;">Save</button>
         </div>
     </div>
 
@@ -727,24 +728,47 @@ function renderBubble(data, msgId, lastReadTime) {
 };
                             
 
-    // --- PERFIL E CONTATO ---
-    window.openUserProfile = async () => {
-        const myUid = auth.currentUser.uid;
-        const snap = await getDoc(doc(db, "users", myUid));
-        document.getElementById('my-profile-id').innerText = myUid;
-        document.getElementById('my-profile-name').innerText = snap.data().name;
-        document.getElementById('my-profile-img').src = auth.currentUser.photoURL;
-        document.getElementById('my-profile-bio').value = snap.data().bio || "";
-        setView('myProfile');
-    };
+// --- PERFIL E CONTATO ---
+window.openUserProfile = async () => {
+    const myUid = auth.currentUser.uid;
+    const snap = await getDoc(doc(db, "users", myUid));
+    const userData = snap.data();
+    
+    // Preenche o ID (apenas leitura)
+    document.getElementById('my-profile-id').innerText = myUid;
+    
+    // Preenche Nome e Bio (campos editáveis)
+    document.getElementById('my-profile-name').value = userData.name || "";
+    document.getElementById('my-profile-bio').value = userData.bio || "";
+    
+    // Foto de perfil
+    document.getElementById('my-profile-img').src = auth.currentUser.photoURL || 'default-avatar.png';
+    
+    setView('myProfile');
+};
 
-    window.saveMyBio = async () => {
-        const bio = document.getElementById('my-profile-bio').value;
-        if(bio.length > 50) return alert("Max 50 chars.");
-        await updateDoc(doc(db, "users", auth.currentUser.uid), { bio: bio });
-        alert("Bio updated!");
-    };
+window.saveMyBio = async () => {
+    const newName = document.getElementById('my-profile-name').value.trim();
+    const bio = document.getElementById('my-profile-bio').value;
 
+    // Validações
+    if(newName.length < 2) return alert("Name too short.");
+    if(newName.length > 20) return alert("Name max 20 characters."); // Trava de 20 caracteres
+    if(bio.length > 50) return alert("Max 50 chars for bio.");
+
+    try {
+        await updateDoc(doc(db, "users", auth.currentUser.uid), { 
+            name: newName,
+            bio: bio 
+        });
+        alert("Profile updated!");
+    } catch (e) {
+        console.error(e);
+        alert("Error updating profile.");
+    }
+};
+        
+                
     window.openContactInfo = async () => {
         if(!currentActiveContactId) return;
         const snap = await getDoc(doc(db, "users", currentActiveContactId));
