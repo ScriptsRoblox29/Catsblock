@@ -157,25 +157,42 @@
             100% { transform: scale(1); opacity: 1; filter: blur(0); }
         }
 
-            /* No final do seu <style> */
 .bubble {
-    display: flex !important;
-    align-items: flex-end;
-    gap: 6px;
-    justify-content: space-between;
+    display: block !important;
+    padding: 11px 16px;
+    border-radius: 20px;
+    font-size: 16px;
+    line-height: 1.35;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    position: relative;
+    max-width: 100%;
 }
 
 .read-status {
+    float: right;
     display: inline-flex;
     font-size: 10px;
     color: var(--ios-grey);
-    margin-bottom: -2px;
+    margin-left: 8px;
+    margin-top: 5px;
+    line-height: 1;
 }
 
-.check-2 { margin-left: -5px; display: none; }
+.check-2 { 
+    margin-left: 6px; 
+    display: none; 
+}
 
-.read-status.read { color: #00d2ff; } /* Azul */
-.read-status.read .check-2 { display: inline-block; }
+.read-status.read { 
+    color: #00d2ff; 
+}
+
+.read-status.read .check-2 { 
+    display: inline-block; 
+}
+        
         
     </style>
 </head>
