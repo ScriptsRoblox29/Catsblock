@@ -157,31 +157,31 @@
             100% { transform: scale(1); opacity: 1; filter: blur(0); }
         }
 
-.bubble {
-    display: block !important;
-    padding: 11px 16px;
-    border-radius: 20px;
-    font-size: 16px;
-    line-height: 1.35;
+
+        .bubble {
+    display: flex !important;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 8px;
+    justify-content: space-between;
     word-wrap: break-word;
     overflow-wrap: anywhere;
-    word-break: break-word;
-    position: relative;
     max-width: 100%;
 }
 
 .read-status {
-    float: right;
     display: inline-flex;
+    align-items: center;
     font-size: 10px;
     color: var(--ios-grey);
-    margin-left: 8px;
-    margin-top: 5px;
-    line-height: 1;
+    margin-bottom: -2px;
+    gap: 3px;
+    flex-shrink: 0;
+    margin-left: auto;
 }
 
 .check-2 { 
-    margin-left: 6px; 
+    margin-left: 0;
     display: none; 
 }
 
