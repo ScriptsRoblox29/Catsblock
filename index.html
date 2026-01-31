@@ -658,7 +658,6 @@ function renderBubble(data, msgId, lastReadTime) {
     // Adicionado lastWrite para respeitar o Antispam de 5s
     await updateDoc(doc(db, "users", myUid), { 
         blockedList: arrayUnion(currentActiveContactId),
-        lastWrite: serverTimestamp() 
     });
     
     alert("User blocked.");
@@ -713,7 +712,6 @@ function renderBubble(data, msgId, lastReadTime) {
     // Adicionado lastWrite
     await updateDoc(doc(db, "users", auth.currentUser.uid), { 
         blockedList: arrayRemove(uid),
-        lastWrite: serverTimestamp()
     });
     window.openSettings();
 };
@@ -734,8 +732,7 @@ function renderBubble(data, msgId, lastReadTime) {
         
         // Grava no Firebase incluindo o timestamp do servidor
         await updateDoc(userRef, { 
-            acceptingRequests: newState,
-            lastWrite: serverTimestamp() // Garante a independência do JS
+            acceptingRequests: newState
         });
 
         if (newState) {
@@ -745,7 +742,7 @@ function renderBubble(data, msgId, lastReadTime) {
         }
     } catch (e) {
         if (e.code === 'permission-denied') {
-            alert("Please wait 5 seconds to change this setting.");
+            alert("permission denied");
         } else {
             console.error("Error:", e);
         }
