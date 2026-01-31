@@ -644,22 +644,29 @@ function renderBubble(data, msgId, lastReadTime) {
 
     // --- BLOQUEIO E CONFIGS ---
     window.handleUserBlock = async () => {
-        if (!currentActiveContactId) return;
-        const myUid = auth.currentUser.uid;
-        const snap = await getDoc(doc(db, "users", myUid));
-        const blockedList = snap.data().blockedList || [];
+    if (!currentActiveContactId) return;
+    const myUid = auth.currentUser.uid;
+    const snap = await getDoc(doc(db, "users", myUid));
+    const blockedList = snap.data().blockedList || [];
 
-        if (blockedList.includes(currentActiveContactId)) {
-            alert(`You've already blocked this person. To unblock them, go to Profile > Settings and unblock the userid.`);
-            window.toggleBlockModal(false);
-            return;
-        }
-
-        await updateDoc(doc(db, "users", myUid), { blockedList: arrayUnion(currentActiveContactId) });
-        alert("User blocked.");
+    if (blockedList.includes(currentActiveContactId)) {
+        alert(`You've already blocked this person. To unblock them, go to Profile > Settings and unblock the userid.`);
         window.toggleBlockModal(false);
-        setView('main');
-    };
+        return;
+    }
+
+    // Adicionado lastWrite para respeitar o Antispam de 5s
+    await updateDoc(doc(db, "users", myUid), { 
+        blockedList: arrayUnion(currentActiveContactId),
+        lastWrite: serverTimestamp() 
+    });
+    
+    alert("User blocked.");
+    window.toggleBlockModal(false);
+    setView('main');
+};
+                
+                
 
                 window.openSettings = async () => {
     const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
@@ -703,48 +710,51 @@ function renderBubble(data, msgId, lastReadTime) {
                     
 
     window.unblockUser = async (uid) => {
-        await updateDoc(doc(db, "users", auth.currentUser.uid), { blockedList: arrayRemove(uid) });
-        window.openSettings();
-    };
+    // Adicionado lastWrite
+    await updateDoc(doc(db, "users", auth.currentUser.uid), { 
+        blockedList: arrayRemove(uid),
+        lastWrite: serverTimestamp()
+    });
+    window.openSettings();
+};
+                
 
     window.toggleAcceptRequests = async () => {
     const toggle = document.getElementById('toggle-requests');
     if (!toggle) return;
 
-    // 1. Pegamos o estado oposto ao que está na tela agora
     const isCurrentlyActive = toggle.classList.contains('active');
     const newState = !isCurrentlyActive;
 
-    // 2. Feedback visual de "processando"
     toggle.style.opacity = "0.5";
     toggle.style.pointerEvents = "none";
 
     try {
         const userRef = doc(db, "users", auth.currentUser.uid);
         
-        // 3. Grava no Firebase
+        // Grava no Firebase incluindo o timestamp do servidor
         await updateDoc(userRef, { 
-            acceptingRequests: newState 
+            acceptingRequests: newState,
+            lastWrite: serverTimestamp() // Garante a independência do JS
         });
 
-        // 4. SÓ MUDA O VISUAL APÓS A CONFIRMAÇÃO DO SUCESSO
         if (newState) {
             toggle.classList.add('active');
         } else {
             toggle.classList.remove('active');
         }
-        
-        console.log("Firebase updated for:", newState);
     } catch (e) {
-        console.error("Unknown error, Send this error to the TikToker fmafioso:", e);
-        alert("Error. Send this error to the TikToker fmafioso");
+        if (e.code === 'permission-denied') {
+            alert("Please wait 5 seconds to change this setting.");
+        } else {
+            console.error("Error:", e);
+        }
     } finally {
-        // 5. Restaura o botão
         toggle.style.opacity = "1";
         toggle.style.pointerEvents = "auto";
     }
 };
-                            
+                
 
 // --- PERFIL E CONTATO ---
 window.openUserProfile = async () => {
