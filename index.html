@@ -43,17 +43,26 @@
     padding-bottom: calc(35px + env(safe-area-inset-bottom)); 
     box-sizing: border-box; 
         }
+        
         .app-view.active { display: flex; }
 
         /* --- LOADING STATE --- */
-        #view-loading { justify-content: center; align-items: center; z-index: 1000; }
-        .ios-loader {
-            width: 35px; height: 28px;
-            border: 3px solid rgba(255,255,255,0.1);
-            border-top: 3px solid var(--ios-blue);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
+#view-loading { 
+    justify-content: center; 
+    align-items: center; 
+    z-index: 1000; 
+    /* Esta linha abaixo é o segredo: anula o espaço extra só nesta tela */
+    padding-bottom: 0 !important; 
+}
+
+.ios-loader {
+    width: 35px; 
+    height: 35px; /* Ajustei para 35px para ficar um círculo perfeito */
+    border: 3px solid rgba(255,255,255,0.1);
+    border-top: 3px solid var(--ios-blue);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
 
         /* --- LOGIN DESIGN --- */
         #view-login { justify-content: center; align-items: center; padding: 40px; text-align: center; }
