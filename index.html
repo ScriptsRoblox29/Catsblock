@@ -615,25 +615,14 @@ function renderBubble(data, msgId, lastReadTime) {
     
 
         
-                
-
-    window.postMessage = async () => {
+        window.postMessage = async () => {
     const textarea = document.getElementById('main-textarea');
     const text = textarea.value.trim();
     if (!text || !currentChatId) return;
     
     const chatId = currentChatId;
-    const tempId = "msg-" + Date.now(); // RG único da mensagem para não confundir
-    
     textarea.value = ""; 
     textarea.style.height = 'auto';
-
-    // 1. Cria a bolha na tela com o tempId (mostra "Sending...")
-    renderBubble({
-        content: text,
-        sender: auth.currentUser.uid,
-        createdAt: null 
-    }, tempId);
 
     try {
         await addDoc(collection(db, "chats", chatId, "messages"), {
@@ -642,19 +631,12 @@ function renderBubble(data, msgId, lastReadTime) {
             createdAt: serverTimestamp()
         });
 
+        // Atualiza seu próprio visto ao enviar
         await updateDoc(doc(db, "chats", chatId), {
             [`lastRead.${auth.currentUser.uid}`]: serverTimestamp()
         });
-    } catch (e) {
-        // 2. Se falhar, ele procura a bolha específica pelo RG dela
-        const myBubbleStatus = document.querySelector(`[data-id="${tempId}"] .msg-time`);
-        if (myBubbleStatus) {
-            myBubbleStatus.innerText = "Not sent";
-        }
-    }
-};
-                
-                
+    } catch (e) { }
+};         
 
                 
     document.getElementById('btn-send').onclick = window.postMessage;
