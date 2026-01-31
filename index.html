@@ -373,7 +373,7 @@
 
     // --- SISTEMA DE DATA DINÂMICA ---
     function formatChatTime(timestamp) {
-        if (!timestamp) return "Sent.";
+        if (!timestamp) return "Sending...";
         const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
         const now = new Date();
         const diffMs = now - date;
@@ -447,27 +447,17 @@ function setView(viewId) {
         const q = query(collection(db, "chats"), where("participants", "array-contains", auth.currentUser.uid));
         onSnapshot(q, (snapshot) => {
             list.innerHTML = snapshot.empty ? `<div style="text-align:center; padding:60px; color:gray;">No conversations.</div>` : "";
-            snapshot.forEach(async (docSnap) => { // 1. Adicione async aqui
-    const chatId = docSnap.id;
-    const chatData = docSnap.data();
-    
-    // 2. Encontre quem é o outro usuário
-    const otherId = chatData.participants.find(p => p !== auth.currentUser.uid);
-    
-    // 3. Busque o nome dele
-    const userSnap = await getDoc(doc(db, "users", otherId));
-    const otherName = userSnap.exists() ? userSnap.data().name : "User";
-
-    const div = document.createElement('div');
-    div.className = 'skeleton-item';
-    div.style.padding = '15px'; div.style.cursor = 'pointer';
-    
-    // 4. Mude aqui de chatId para otherName
-    div.innerHTML = `<strong>${otherName}</strong>`; 
-    
-    div.onclick = () => openChat(chatId, otherName); // Passe o nome para o header do chat se quiser
-    list.appendChild(div);
-});
+            snapshot.forEach(docSnap => {
+                const chatId = docSnap.id;
+                const div = document.createElement('div');
+                div.className = 'skeleton-item';
+                div.style.padding = '15px'; div.style.cursor = 'pointer';
+                div.innerHTML = `<strong>Chat: ${chatId.substring(0,8)}...</strong>`;
+                div.onclick = () => openChat(chatId);
+                list.appendChild(div);
+            });
+        });
+                }
                 
 
 
