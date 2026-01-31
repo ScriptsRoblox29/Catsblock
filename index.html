@@ -597,9 +597,9 @@ function renderBubble(data, msgId, lastReadTime) {
     row.setAttribute('data-id', msgId);
     row.setAttribute('data-time', msgTime); 
     
-    row.innerHTML = `
+        row.innerHTML = `
         <div class="bubble ${mode}">
-            <span style="flex:1;">${data.content}</span>
+            <span class="msg-body" style="flex:1;"></span>
             ${isMine ? `
                 <span class="read-status ${isRead ? 'read' : ''}">
                     <i class="fa-solid fa-check check-1"></i>
@@ -609,6 +609,10 @@ function renderBubble(data, msgId, lastReadTime) {
         </div>
         <div class="msg-time">${formatChatTime(data.createdAt)}</div>
     `;
+
+    // A parte mudada é esta:
+    row.querySelector('.msg-body').textContent = data.content;
+
     scroller.appendChild(row);
     scroller.scrollTop = scroller.scrollHeight;
 }
