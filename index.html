@@ -623,11 +623,12 @@ function renderBubble(data, msgId, lastReadTime) {
     if (!text || !currentChatId) return;
     
     const chatId = currentChatId;
-    const tempId = "msg-" + Date.now(); // ID para identificar esta bolha específica
+    const tempId = "msg-" + Date.now(); // RG único da mensagem para não confundir
+    
     textarea.value = ""; 
     textarea.style.height = 'auto';
 
-    // 1. Renderiza a bolha na tela (formatChatTime retornará "Sending..." porque createdAt é null)
+    // 1. Cria a bolha na tela com o tempId (mostra "Sending...")
     renderBubble({
         content: text,
         sender: auth.currentUser.uid,
@@ -645,14 +646,14 @@ function renderBubble(data, msgId, lastReadTime) {
             [`lastRead.${auth.currentUser.uid}`]: serverTimestamp()
         });
     } catch (e) {
-        // 2. Se der erro, localiza a bolha pelo data-id e troca o texto
-        const row = document.querySelector(`[data-id="${tempId}"]`);
-        if (row) {
-            const timeDiv = row.querySelector('.msg-time');
-            if (timeDiv) timeDiv.innerText = "Not sent";
+        // 2. Se falhar, ele procura a bolha específica pelo RG dela
+        const myBubbleStatus = document.querySelector(`[data-id="${tempId}"] .msg-time`);
+        if (myBubbleStatus) {
+            myBubbleStatus.innerText = "Not sent";
         }
     }
 };
+                
                 
 
                 
