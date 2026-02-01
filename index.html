@@ -521,22 +521,20 @@ document.getElementById('github-auth-trigger').onclick = async () => {
     // Agora que garantimos o ID, o erro de 'indexOf' desaparece
     currentActiveContactId = contactId;
 
-    // Preenche o nome na barra imediatamente
+        // Preenche o nome na barra imediatamente
     if (contactName) {
-        if (contactName.trim().length === 0) {
+        if (contactName === "...") {
+            document.getElementById('chat-contact-name').innerText = "...";
+        } else if (contactName.trim().length === 0) {
             document.getElementById('chat-contact-name').innerText = "Contact";
         } else {
             document.getElementById('chat-contact-name').innerText = contactName;
         }
     } else {
-        // Se ainda está carregando as informações do Firebase
-        if (isLoadingContact) { 
-            document.getElementById('chat-contact-name').innerText = "...";
-        } else {
-            // Se o Firebase já respondeu e o documento realmente não existe
-            document.getElementById('chat-contact-name').innerText = "The account has been banned.";
-        }
-    }
+        // Documento deletado no Firebase (Banido)
+        document.getElementById('chat-contact-name').innerText = "...";
+                }
+            
                     
                     
 
