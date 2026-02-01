@@ -477,7 +477,7 @@ document.getElementById('github-auth-trigger').onclick = async () => {
             blockedList: []
         }, { merge: true });
 
-        console.log("Login com GitHub realizado com sucesso!");
+        console.log("sucess");
     } catch (err) {
         console.error("Error with Github authorization:", err.code, err.message);
         
@@ -547,10 +547,10 @@ document.getElementById('github-auth-trigger').onclick = async () => {
                 document.getElementById('info-profile-id').innerText = contactId;
                 document.getElementById('info-profile-bio').innerText = contactData.bio || 'No bio yet.';
             }
-        } catch (e) { console.error("Erro interno:", e); }
+        } catch (e) { console.error("Error:", e); }
     }
 };
-                    
+             
 
     function listenForMessages(chatId) {
     if (unsubscribeMessages) unsubscribeMessages();
@@ -843,25 +843,67 @@ window.saveMyBio = async () => {
         
                 
     window.openContactInfo = async () => {
-        if(!currentActiveContactId) return;
+    if(!currentActiveContactId) return;
+    
+    try {
         const snap = await getDoc(doc(db, "users", currentActiveContactId));
-        const data = snap.data();
-        document.getElementById('info-profile-img').src = data.photoURL;
-        document.getElementById('info-profile-name').innerText = data.name;
-        document.getElementById('info-profile-id').innerText = currentActiveContactId;
-        document.getElementById('info-profile-bio').innerText = data.bio || "No description.";
-        setView('contactInfo');
-    };
+        
+        if (snap.exists()) {
+            const data = snap.data();
+            
+            // 1. Foto: Se não existir, fica vazio
+            document.getElementById('info-profile-img').src = data.photoURL || '';
+            
+            // 2. Nome: Se não existir no doc, mostra moderado
+            document.getElementById('info-profile-name').innerText = data.name || "[ Moderated content ]";
+            
+            // 3. ID: Mostra o ID real do contato
+            document.getElementById('info-profile-id').innerText = currentActiveContactId;
+            
+            // 4. Bio: Se não existir ou for só espaço/vazio, mostra "No description."
+            const bioContent = data.bio ? data.bio.trim() : "";
+            document.getElementById('info-profile-bio').innerText = bioContent.length > 0 ? bioContent : "No description.";
+
+        } else {
+            // Caso o documento tenha sido deletado (Banido)
+            document.getElementById('info-profile-img').src = ''; 
+            document.getElementById('info-profile-name').innerText = "[ Moderated content ]";
+            document.getElementById('info-profile-id').innerText = "The account has been deleted.";
+            document.getElementById('info-profile-bio').innerText = "[ Moderated content ]"; // Descrição vazia conforme solicitado
+        }
+    } catch (error) {
+        console.error("Error fetching contact info:", error);
+    }
+    
+    setView('contactInfo');
+};
+                            
 
     window.openNewConversation = async () => {
-        const targetId = prompt("Enter User ID:");
-        if(!targetId || targetId === auth.currentUser.uid) return;
-        const userSnap = await getDoc(doc(db, "users", targetId));
-        if(!userSnap.exists() || !userSnap.data().acceptingRequests) return alert("User not accepting requests.");
-        const chatId = auth.currentUser.uid < targetId ? `${auth.currentUser.uid}_${targetId}` : `${targetId}_${auth.currentUser.uid}`;
-        await setDoc(doc(db, "chats", chatId), { participants: [auth.currentUser.uid, targetId], createdAt: serverTimestamp() }, { merge: true });
-        openChat(chatId);
-    };
+    const targetId = prompt("Enter User ID:");
+    if(!targetId || targetId === auth.currentUser.uid) return;
+
+    const userSnap = await getDoc(doc(db, "users", targetId));
+
+    // Se o documento não existir (foi deletado ou ID errado)
+    if (!userSnap.exists()) {
+        return alert("This user does not exist or has been banned.");
+    }
+
+    // Se o documento existe, mas a opção de aceitar requisições está desativada
+    if (!userSnap.data().acceptingRequests) {
+        return alert("This user does not accept new conversations.");
+    }
+
+    const chatId = auth.currentUser.uid < targetId ? `${auth.currentUser.uid}_${targetId}` : `${targetId}_${auth.currentUser.uid}`;
+    await setDoc(doc(db, "chats", chatId), { 
+        participants: [auth.currentUser.uid, targetId], 
+        createdAt: serverTimestamp() 
+    }, { merge: true });
+
+    openChat(chatId);
+};
+                
 
     window.toggleBlockModal = (show) => document.getElementById('modal-block').style.display = show ? 'flex' : 'none';
 
