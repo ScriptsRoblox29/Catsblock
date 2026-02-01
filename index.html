@@ -234,11 +234,12 @@
             Continue with Google
         </button>
 
-        <button class="btn-google" id="apple-auth-trigger" style="margin-top: -15px;">
-            <i class="fa-brands fa-apple" style="font-size: 20px; color: black;"></i>
-            Continue with Apple
+        <button class="btn-google" id="github-auth-trigger" style="margin-top: -15px; background: #24292f; color: white;">
+    <i class="fa-brands fa-github" style="font-size: 20px;"></i>
+    Continue with GitHub
         </button>
-
+        
+        
         <p style="font-size: 13px; color: var(--ios-grey); margin-top: 20px;">
             By continuing, you agree to our <br><a href="https://docs.google.com/document/d/1aB2LW5R3AuPpPiBvISFxS8d4ftbXWYa4TgAa-K_xwfI/edit?usp=drivesdk" style="color: var(--ios-blue); text-decoration: none;">terms of service</a>.
         </p>
@@ -352,7 +353,7 @@
 
             <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getAuth, GoogleAuthProvider, GithubAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getFirestore, collection, addDoc, onSnapshot, query, where, orderBy, serverTimestamp, doc, updateDoc, getDoc, setDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -455,24 +456,34 @@ function setView(viewId) {
     };
 
 
-        document.getElementById('apple-auth-trigger').onclick = async () => {
-        try {
-            const appleProvider = new OAuthProvider('apple.com');
-            const result = await signInWithPopup(auth, appleProvider);
-            const user = result.user;
-            
-            // Link de uma imagem de perfil padrão (silhueta cinza)
-            const applephoto = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+        // Primeiro, defina o provedor (fora da função de clique)
+const githubProvider = new GithubAuthProvider();
 
-            await setDoc(doc(db, "users", user.uid), {
-                name: user.displayName || user.email.split('@')[0] || "Apple User",
-                // Se o usuário tiver foto, usa a dele. Se não (null), usa a fotoPadrao
-                photoURL: user.photoURL || applephoto, 
-                acceptingRequests: true,
-                blockedList: []
-            }, { merge: true });
-        } catch (err) { console.error(err); }
-    };
+// Lógica de clique do GitHub
+document.getElementById('github-auth-trigger').onclick = async () => {
+    try {
+        const result = await signInWithPopup(auth, githubProvider);
+        const user = result.user;
+        
+        // Foto de perfil padrão (silhueta cinza)
+        const standardAvatar = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+
+        // Salva ou atualiza o usuário no Firestore
+        await setDoc(doc(db, "users", user.uid), {
+            // O GitHub às vezes não retorna displayName, então usamos o username do GitHub como reserva
+            name: user.displayName || user.reloadUserInfo.screenName || "GitHub User",
+            photoURL: user.photoURL || standardAvatar,
+            acceptingRequests: true,
+            blockedList: []
+        }, { merge: true });
+
+        console.log("Login com GitHub realizado com sucesso!");
+    } catch (err) {
+        console.error("Error with Github authorization:", err.code, err.message);
+        
+    }
+};
+                
                 
 
     // --- LISTA DE CONVERSAS ---
