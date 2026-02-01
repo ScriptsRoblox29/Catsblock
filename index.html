@@ -454,6 +454,27 @@ function setView(viewId) {
         } catch (err) { console.error(err); }
     };
 
+
+        document.getElementById('apple-auth-trigger').onclick = async () => {
+        try {
+            const appleProvider = new OAuthProvider('apple.com');
+            const result = await signInWithPopup(auth, appleProvider);
+            const user = result.user;
+            
+            // Link de uma imagem de perfil padrão (silhueta cinza)
+            const applephoto = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+
+            await setDoc(doc(db, "users", user.uid), {
+                name: user.displayName || user.email.split('@')[0] || "Apple User",
+                // Se o usuário tiver foto, usa a dele. Se não (null), usa a fotoPadrao
+                photoURL: user.photoURL || applephoto, 
+                acceptingRequests: true,
+                blockedList: []
+            }, { merge: true });
+        } catch (err) { console.error(err); }
+    };
+                
+
     // --- LISTA DE CONVERSAS ---
     async function bootstrapApp() {
         const list = document.getElementById('conversations-list');
