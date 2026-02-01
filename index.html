@@ -521,19 +521,23 @@ document.getElementById('github-auth-trigger').onclick = async () => {
     // Agora que garantimos o ID, o erro de 'indexOf' desaparece
     currentActiveContactId = contactId;
 
-       // Preenche o nome na barra imediatamente
+    // Preenche o nome na barra imediatamente
     if (contactName) {
-        if (contactName === "...") {
-            document.getElementById('chat-contact-name').innerText = "...";
-        } else if (contactName.trim().length === 0) {
+        if (contactName.trim().length === 0) {
             document.getElementById('chat-contact-name').innerText = "Contact";
         } else {
             document.getElementById('chat-contact-name').innerText = contactName;
         }
     } else {
-        // Documento deletado no Firebase (Banido)
-        document.getElementById('chat-contact-name').innerText = "The account has been banned.";
+        // Se ainda está carregando as informações do Firebase
+        if (isLoadingContact) { 
+            document.getElementById('chat-contact-name').innerText = "...";
+        } else {
+            // Se o Firebase já respondeu e o documento realmente não existe
+            document.getElementById('chat-contact-name').innerText = "The account has been banned.";
+        }
     }
+                    
                     
 
     document.getElementById('chat-scroller').innerHTML = ""; 
@@ -878,7 +882,7 @@ window.saveMyBio = async () => {
             // Caso o documento tenha sido deletado (Banido)
             document.getElementById('info-profile-img').src = ''; 
             document.getElementById('info-profile-name').innerText = "[ Moderated content ]";
-            document.getElementById('info-profile-id').innerText = "The account has been deleted.";
+            document.getElementById('info-profile-id').innerText = "The account has been banned.";
             document.getElementById('info-profile-bio').innerText = "[ Moderated content ]"; // Descrição vazia conforme solicitado
         }
     } catch (error) {
