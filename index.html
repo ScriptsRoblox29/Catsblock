@@ -225,18 +225,26 @@
         <div class="ios-loader"></div>
     </div>
 
-    <div id="view-login" class="app-view">
-        <div class="login-container">
-            <h1 style="font-weight: 700; font-size: 28px;">Log in to access CatsBlock</h1>
-            <button class="btn-google" id="google-auth-trigger">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" width="20">
-                Continue with Google
-            </button>
-            <p style="font-size: 13px; color: var(--ios-grey); margin-top: 20px;">
-                By continuing, you agree to our <br><a href="https://docs.google.com/document/d/1aB2LW5R3AuPpPiBvISFxS8d4ftbXWYa4TgAa-K_xwfI/edit?usp=drivesdk" style="color: var(--ios-blue); text-decoration: none;">terms of service</a>.
-            </p>
-        </div>
+<div id="view-login" class="app-view">
+    <div class="login-container">
+        <h1 style="font-weight: 700; font-size: 28px;">Welcome! Log in to access CatsBlock</h1>
+        
+        <button class="btn-google" id="google-auth-trigger">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" width="20">
+            Continue with Google
+        </button>
+
+        <button class="btn-google" id="apple-auth-trigger" style="margin-top: -15px;">
+            <i class="fa-brands fa-apple" style="font-size: 20px; color: black;"></i>
+            Continue with Apple
+        </button>
+
+        <p style="font-size: 13px; color: var(--ios-grey); margin-top: 20px;">
+            By continuing, you agree to our <br><a href="https://docs.google.com/document/d/1aB2LW5R3AuPpPiBvISFxS8d4ftbXWYa4TgAa-K_xwfI/edit?usp=drivesdk" style="color: var(--ios-blue); text-decoration: none;">terms of service</a>.
+        </p>
     </div>
+</div>
+    
 
     <div id="view-main" class="app-view">
         <header>
@@ -344,7 +352,7 @@
 
             <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getFirestore, collection, addDoc, onSnapshot, query, where, orderBy, serverTimestamp, doc, updateDoc, getDoc, setDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = {
