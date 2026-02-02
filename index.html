@@ -434,14 +434,36 @@ function setView(viewId) {
     window.setView = setView;
     window.navigateBack = () => setView('main');
 
-    // --- AUTH ---
-    onAuthStateChanged(auth, (user) => {
-        if (user) { 
-            setView('main'); 
-        } else { 
-            setView('login'); 
+    // --- AUTH ATUALIZADO ---
+onAuthStateChanged(auth, async (user) => {
+    if (user) {
+        try {
+            // "Isca" para checar se o usuário está banido nas Rules
+            const userRef = doc(db, "users", user.uid);
+            await getDoc(userRef); 
+
+            // Se não deu erro, ele está liberado
+            setView('main');
+
+        } catch (error) {
+            // Se as Rules negarem (conta na lista bannedUsers)
+            if (error.code === 'permission-denied') {
+                alert("Your account has been permanently banned for violating our terms of service and rules. To connect to another account, click OK.");
+                
+                // Limpa o token e volta para o login
+                await signOut(auth);
+                setView('login');
+            } else {
+                // Outro erro qualquer (como documento deletado mas não banido)
+                // Se o documento não existe mas não é banido, ele cria o perfil
+                setView('main'); 
+            }
         }
-    });
+    } else { 
+        setView('login'); 
+    }
+});
+                
 
     document.getElementById('google-auth-trigger').onclick = async () => {
         try {
