@@ -189,13 +189,24 @@
     font-size: 15px; 
     line-height: 1.4;
     animation: elasticIn 0.3s ease;
+    border: 1px solid #1a1a1a;
     
-    /* AS LINHAS QUE RESOLVEM O SEU PROBLEMA: */
-    word-wrap: break-word;       /* Força a quebra de palavras longas */
-    overflow-wrap: anywhere;     /* Garante que o texto não escape do container */
-    white-space: pre-wrap;       /* Mantém espaços e quebras de linha manuais */
-    display: block !important;   /* Ocupa o espaço necessário verticalmente */
-        }
+    /* FIX DE QUEBRA DE TEXTO */
+    display: block !important;    /* Remove o flex que impedia a quebra */
+    word-wrap: break-word;        /* Força a quebra de palavras gigantes */
+    overflow-wrap: anywhere;      /* Garante que nada saia da borda */
+    white-space: normal;          /* Garante comportamento padrão de texto */
+    position: relative;
+}
+
+.read-status {
+    display: block;               /* Muda para block */
+    text-align: right;            /* Joga os checks para o canto inferior direito */
+    font-size: 10px;
+    color: var(--ios-grey);
+    margin-top: 4px;              /* Dá um espaço do texto acima */
+}
+        
         
 
         .read-status {
