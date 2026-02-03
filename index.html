@@ -183,22 +183,17 @@
             100% { transform: translateY(0); opacity: 1; }
         }
 
-        .bubble {
-    padding: 12px 16px; 
-    border-radius: 4px; 
-    font-size: 15px; 
-    line-height: 1.4;
-    animation: elasticIn 0.3s ease;
-    border: 1px solid #1a1a1a;
-    
-    /* FIX DE QUEBRA DE TEXTO */
-    display: block !important;    /* Remove o flex que impedia a quebra */
-    word-wrap: break-word;        /* Força a quebra de palavras gigantes */
-    overflow-wrap: anywhere;      /* Garante que nada saia da borda */
-    white-space: normal;          /* Garante comportamento padrão de texto */
-    position: relative;
+.bubble {
+    display: flex !important;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 8px;
+    justify-content: space-between;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+    max-width: 100%;
 }
-
+        
 .read-status {
     display: block;               /* Muda para block */
     text-align: right;            /* Joga os checks para o canto inferior direito */
