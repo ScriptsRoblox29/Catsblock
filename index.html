@@ -184,12 +184,19 @@
         }
 
         .bubble {
-            display: flex !important;
-            flex-wrap: wrap;
-            align-items: flex-end;
-            gap: 8px;
-            justify-content: space-between;
+    padding: 12px 16px; 
+    border-radius: 4px; 
+    font-size: 15px; 
+    line-height: 1.4;
+    animation: elasticIn 0.3s ease;
+    
+    /* AS LINHAS QUE RESOLVEM O SEU PROBLEMA: */
+    word-wrap: break-word;       /* Força a quebra de palavras longas */
+    overflow-wrap: anywhere;     /* Garante que o texto não escape do container */
+    white-space: pre-wrap;       /* Mantém espaços e quebras de linha manuais */
+    display: block !important;   /* Ocupa o espaço necessário verticalmente */
         }
+        
 
         .read-status {
             display: inline-flex;
