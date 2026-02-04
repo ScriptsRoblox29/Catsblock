@@ -13,7 +13,6 @@
 
     <meta property="og:title" content="Catsblock" />
     <meta property="og:description" content="CatsBlock is a messaging platform where you can send messages to other people. Try it now!" />
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
@@ -260,10 +259,6 @@ button:not(:disabled) {
             Continue with GitHub
         </button>
         
-        <div style="display: flex; justify-content: center; margin-top: 20px;">
-            <div class="cf-turnstile" data-sitekey="0x4AAAAAACXsxlNUrj9CmYdz" data-callback="unlockButtons"></div>
-        </div>
-        
         <p style="font-size: 13px; color: var(--ios-grey); margin-top: 20px;">
             By continuing, you agree to our <br><a href="https://docs.google.com" style="color: var(--ios-blue); text-decoration: none;">terms of service</a>.
         </p>
@@ -400,20 +395,6 @@ const appCheck = initializeAppCheck(app, {
   isTokenAutoRefreshEnabled: true
 });
 
-// Porteiro Visível (Interface)
-window.unlockButtons = function(token) {
-    console.log("Cloudflare Check: OK");
-    
-    const googleBtn = document.getElementById('google-auth-trigger');
-    const githubBtn = document.getElementById('github-auth-trigger');
-    
-    if(googleBtn && githubBtn) {
-        googleBtn.disabled = false;
-        githubBtn.disabled = false;
-        googleBtn.style.opacity = "1";
-        githubBtn.style.opacity = "1";
-    }
-};
 
 const auth = getAuth(app);
 const db = getFirestore(app);
