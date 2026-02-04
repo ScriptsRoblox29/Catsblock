@@ -725,10 +725,17 @@ function renderBubble(data, msgId, lastReadTime) {
 
         // Atualiza seu próprio visto ao enviar
         await updateDoc(doc(db, "chats", chatId), {
-            [`lastRead.${auth.currentUser.uid}`]: serverTimestamp()
+            [`lastRead.${auth.currentUser.uid}`]: serverTimestamp(),
+            // ADICIONE ESTA LINHA ABAIXO:
+            lastMessageAt: serverTimestamp() 
         });
-    } catch (e) { }
-};         
+
+    } catch (e) {
+        if (e.code === 'permission-denied') {
+            alert("Whoa! Wait a minute, you're sending messages too fast or ur blocked.");
+        }
+    }
+};
 
                 
     document.getElementById('btn-send').onclick = window.postMessage;
