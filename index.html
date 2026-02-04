@@ -823,7 +823,8 @@ function renderBubble(data, msgId, lastReadTime) {
         
         // Grava no Firebase incluindo o timestamp do servidor
         await updateDoc(userRef, { 
-            acceptingRequests: newState
+            acceptingRequests: newState,
+            lastUpdate: serverTimestamp()
         });
 
         if (newState) {
@@ -833,7 +834,7 @@ function renderBubble(data, msgId, lastReadTime) {
         }
     } catch (e) {
         if (e.code === 'permission-denied') {
-            alert("permission denied");
+            alert("Whoa! Wait a moment, you're changing your settings too fast.");
         } else {
             console.error("Error:", e);
         }
@@ -875,12 +876,13 @@ window.saveMyBio = async () => {
     try {
         await updateDoc(doc(db, "users", auth.currentUser.uid), { 
             name: newName,
-            bio: bio 
+            bio: bio,
+            lastUpdate: serverTimestamp()
         });
         alert("Profile updated!");
     } catch (e) {
-        console.error(e);
-        alert("Error updating profile.");
+        console.error("denied:", error);
+        alert("Whoa! Calm down, you're updating too fast, wait a minute.");
     }
 };
         
