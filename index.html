@@ -13,7 +13,7 @@
 
     <meta property="og:title" content="Catsblock" />
     <meta property="og:description" content="CatsBlock is a messaging platform where you can send messages to other people. Try it now!" />
-    
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
@@ -218,6 +218,24 @@
         .read-status.read { 
             color: #00d2ff; 
         }
+
+        /* Estilo para botões travados */
+button:disabled {
+    opacity: 0.4 !important; /* Deixa transparente */
+    cursor: not-allowed !important; /* Mostra o círculo de proibido */
+    pointer-events: none; /* Impede qualquer clique */
+    filter: grayscale(1); /* Deixa em preto e branco para reforçar o bloqueio */
+    transition: all 0.4s ease;
+}
+
+/* Quando o Turnstile liberar, eles voltam ao normal */
+button:not(:disabled) {
+    opacity: 1 !important;
+    cursor: pointer !important;
+    pointer-events: auto;
+    filter: grayscale(0);
+}
+        
     </style>
 </head>
     
@@ -228,26 +246,30 @@
         <div class="ios-loader"></div>
     </div>
 
-<div id="view-login" class="app-view">
+   <div id="view-login" class="app-view">
     <div class="login-container">
         <h1 style="font-weight: 700; font-size: 28px;">Welcome! Log in to access CatsBlock</h1>
         
-        <button class="btn-google" id="google-auth-trigger">
+        <button class="btn-google" id="google-auth-trigger" disabled>
             <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" width="20">
             Continue with Google
         </button>
 
-        <button class="btn-google" id="github-auth-trigger" style="margin-top: -15px; background: #24292f; color: white;">
-    <i class="fa-brands fa-github" style="font-size: 20px;"></i>
-    Continue with GitHub
+        <button class="btn-google" id="github-auth-trigger" disabled style="margin-top: -15px; background: #24292f; color: white;">
+            <i class="fa-brands fa-github" style="font-size: 20px;"></i>
+            Continue with GitHub
         </button>
         
+        <div style="display: flex; justify-content: center; margin-top: 20px;">
+            <div class="cf-turnstile" data-sitekey="SUA_SITE_KEY_AQUI" data-callback="unlockButtons"></div>
+        </div>
         
         <p style="font-size: 13px; color: var(--ios-grey); margin-top: 20px;">
-            By continuing, you agree to our <br><a href="https://docs.google.com/document/d/1aB2LW5R3AuPpPiBvISFxS8d4ftbXWYa4TgAa-K_xwfI/edit?usp=drivesdk" style="color: var(--ios-blue); text-decoration: none;">terms of service</a>.
+            By continuing, you agree to our <br><a href="https://docs.google.com" style="color: var(--ios-blue); text-decoration: none;">terms of service</a>.
         </p>
     </div>
-</div>
+   </div>
+    
     
 
     <div id="view-main" class="app-view">
@@ -371,10 +393,30 @@
     };
 
     const app = initializeApp(firebaseConfig);
+
+// Porteiro Invisível (Firebase)
 const appCheck = initializeAppCheck(app, {
   provider: new ReCaptchaV3Provider('6LeDvl8sAAAAAMzxbKMWkXkYjX920jZ5eKEa3N14'),
   isTokenAutoRefreshEnabled: true
 });
+
+// Porteiro Visível (Interface)
+window.unlockButtons = function(token) {
+    console.log("Cloudflare Check: OK");
+    
+    const googleBtn = document.getElementById('google-auth-trigger');
+    const githubBtn = document.getElementById('github-auth-trigger');
+    
+    if(googleBtn && githubBtn) {
+        googleBtn.disabled = false;
+        githubBtn.disabled = false;
+        googleBtn.style.opacity = "1";
+        githubBtn.style.opacity = "1";
+    }
+};
+
+const auth = getAuth(app);
+const db = getFirestore(app);
     const auth = getAuth(app);
     const db = getFirestore(app);
     const provider = new GoogleAuthProvider();
