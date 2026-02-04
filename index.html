@@ -481,7 +481,8 @@ onAuthStateChanged(auth, async (user) => {
                 name: result.user.displayName,
                 photoURL: result.user.photoURL,
                 acceptingRequests: true,
-                blockedList: []
+                blockedList: [],
+                lastUpdate: serverTimestamp()
             }, { merge: true });
         } catch (err) { console.error(err); }
     };
@@ -505,7 +506,8 @@ document.getElementById('github-auth-trigger').onclick = async () => {
             name: user.displayName || user.reloadUserInfo.screenName || "GitHub User",
             photoURL: user.photoURL || standardAvatar,
             acceptingRequests: true,
-            blockedList: []
+            blockedList: [],
+            lastUpdate: serverTimestamp()
         }, { merge: true });
 
         console.log("sucess");
@@ -950,7 +952,8 @@ window.saveMyBio = async () => {
     const chatId = auth.currentUser.uid < targetId ? `${auth.currentUser.uid}_${targetId}` : `${targetId}_${auth.currentUser.uid}`;
     await setDoc(doc(db, "chats", chatId), { 
         participants: [auth.currentUser.uid, targetId], 
-        createdAt: serverTimestamp() 
+        createdAt: serverTimestamp(),
+        lastMessageAt: serverTimestamp()
     }, { merge: true });
 
     openChat(chatId);
